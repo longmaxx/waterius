@@ -8,5 +8,5 @@ class UserClass
      * Sends new data to server
      * true IF response code = 200
      **/
-    static bool sendNewData(const Settings &settings, const SlaveData &data, const CalculatedData &cdata);
+    static bool sendNewData(const Settings &settings, const SlaveData &data, const CalculatedData &cdata, const HeatCounterData &hcdata);
 };

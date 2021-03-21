@@ -7,7 +7,7 @@
 #define JSON_BUFFER_SIZE 500
 
 
-bool UserClass::sendNewData(const Settings &settings, const SlaveData &data, const CalculatedData &cdata)
+bool UserClass::sendNewData(const Settings &settings, const SlaveData &data, const CalculatedData &cdata, const HeatCounterData &hcdata)
 {
     constexpr char THIS_FUNC_DESCRIPTION[] = "Send new data";
     LOG_INFO(FPSTR(S_SND), "-- START -- " << THIS_FUNC_DESCRIPTION);
@@ -48,7 +48,22 @@ bool UserClass::sendNewData(const Settings &settings, const SlaveData &data, con
     root["adc0"] =          data.adc0;
     root["adc1"] =          data.adc1;
     root["period_min"] =    settings.wakeup_per_min;
-
+    
+    StaticJsonDocument<200> heatCounter;
+    root["heat_counter"] =  heatCounter;
+    
+    heatCounter["errorCode"] = hcdata.errorCode; 
+    heatCounter["power"] = hcdata.power;
+    heatCounter["t_input"] = hcdata.t_Input;
+    heatCounter["t_output"] = hcdata.t_Output;
+    String h_address = "";
+    for (unsigned char i=0;i<HEAT_ADDR_LENGTH;i++)
+    {
+        char s[3];
+        sprintf(s, "%x2", hcdata.address[i]);
+        h_address.append(s);
+    }
+    heatCounter["address"] = h_address;
     serializeJson(root, jsonBody);
     LOG_INFO(FPSTR(S_SND), "JSON size:\t" << jsonBody.length());
     

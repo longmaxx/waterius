@@ -3,12 +3,13 @@
 
 #include <Arduino.h>
 
-#define FIRMWARE_VERSION "0.10.1"
+#define FIRMWARE_VERSION "0.10.2"
   
 
 /*
 Версии прошивки для ESP
 
+0.10.2 -            - Счетчик тепла Пульсар
 0.10.1 - 2021.02.08 - Добавлена настройка веса импульса для горячего
                       и холодного счетчика. Добавлена настройка периода
                       отправки данных.
@@ -55,6 +56,11 @@
 0.5.2 - 2018.09.22 - WifiManager 0.14
 */ 
  
+/*
+Имеется ли счетчик тепла
+*/
+#define HEAT_COUNTER_ENABLE
+
 /* 
     Уровень логирования
 */
@@ -66,6 +72,13 @@
 
 #define MQTT_DEFAULT_TOPIC_PREFIX "waterius/"  // Проверка: mosquitto_sub -h test.mosquitto.org -t "waterius/#" -v
 #define MQTT_DEFAULT_PORT 1883
+
+/*
+ Пины для общения со счетчиком тепла
+*/
+#define HEAT_COUNTER_PORT_RX (D3)
+#define HEAT_COUNTER_PORT_TX (D4)
+
 
 
 #define ESP_CONNECT_TIMEOUT 15000UL // Время подключения к точке доступа, ms
@@ -109,6 +122,14 @@ struct CalculatedData {
     bool     low_voltage;
     int8_t   rssi;
 };
+
+struct HeatCounterData{
+    char address[HEAT_ADDR_LENGTH] = {0x00,0x60,0x07,0x50};
+    int errorCode;// последняя ошибка при получении данных
+    retval_float_t power;// текущее количество калорий
+    retval_float_t t_Input;// температура на входе
+    retval_float_t t_Output;// температура на выходе
+}
 
 /*
 Настройки хранящиеся EEPROM
@@ -200,6 +221,10 @@ struct Settings
     uint16_t wakeup_per_min;
     
     /*
+    Адрес счетчика тепла. В формате BCD
+    */
+    char address[HEAT_ADDR_LENGTH];
+    /*
     Зарезервируем кучу места, чтобы не писать конвертер конфигураций.
     Будет актуально для On-the-Air обновлений
     */
@@ -209,6 +234,6 @@ struct Settings
     Контрольная сумма, чтобы гарантировать корректность чтения настроек
     */
     uint16_t crc;
-}; //976 байт
+}; //980 байт
 
 #endif

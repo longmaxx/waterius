@@ -12,13 +12,17 @@
 #include "voltage.h"
 #include "utils.h"
 #include "cert.h"
+#include "PulsarTHeatCounter.h"
+#include <SoftwareSerial.h>
 
 MasterI2C masterI2C; // Для общения с Attiny85 по i2c
 
 SlaveData data; // Данные от Attiny85
 Settings sett;  // Настройки соединения и предыдущие показания из EEPROM
 CalculatedData cdata; //вычисляемые данные
-
+HeatCounterData hcdata;// данные со счетчика тепла
+SoftwareSerial SSerial(HEAT_COUNTER_PORT_RX, HEAT_COUNTER_PORT_TX);
+PulsarTHeatCounter hc;
 /*
 Выполняется однократно при включении
 */
@@ -28,9 +32,14 @@ void setup()
 
     memset(&cdata, 0, sizeof(cdata));
     memset(&data, 0, sizeof(data));
+    memset(&hcdata, 0, sizeof(hcdata));
     LOG_BEGIN(115200);    //Включаем логгирование на пине TX, 115200 8N1
     LOG_INFO(FPSTR(S_ESP), F("Booted"));
     masterI2C.begin();    //Включаем i2c master
+    
+    // Настраиваем работу со счетчиком тепла
+    SSerial.begin(9600);
+    hc.begin(&SSerial, HeatCounterData.address);
 }
 
 /*
@@ -52,6 +61,19 @@ void calculate_values(const Settings &sett, const SlaveData &data, CalculatedDat
     }
 }
 
+void getHeatCounterValueF (int channel, retval_float_t* value, int* errCode)
+{
+    int res = hc.readActualValueF(HEAT_CHANNEL_POWER, &hdata.power);
+    if ((hdata->errorCode == ERR_OK) && (res != ERR_OK))
+        hdata->errorCode = res;
+}
+
+void getHeatCounterData (HeatCounterData* hdata)
+{
+    getHeatCounterValueF(HEAT_CHANNEL_POWER, &(hdata->power), &(hdata->errorCode));
+    getHeatCounterValueF(HEAT_CHANNEL_POWER, &(hdata->t_Input), &(hdata->errorCode));
+    getHeatCounterValueF(HEAT_CHANNEL_POWER, &(hdata->t_Output), &(hdata->errorCode));
+}
 
 void loop()
 {
@@ -66,6 +88,8 @@ void loop()
 
         //Вычисляем текущие показания
         calculate_values(sett, data, cdata);
+        
+
 
         if (mode == SETUP_MODE) { //Режим настройки - запускаем точку доступа на 192.168.4.1
             //Запускаем точку доступа с вебсервером
@@ -125,6 +149,9 @@ void loop()
             if (success 
                 && WiFi.status() == WL_CONNECTED
                 && masterI2C.getSlaveData(data)) {  //т.к. в check_voltage не проверяем crc
+                
+                //Получаем данные со счетчика тепла. Т.к. проснулись для передачи.
+                getHeatCounterData(&hcdata);
                 
                 print_wifi_mode();
                 LOG_INFO(FPSTR(S_WIF), F("Connected, IP: ") << WiFi.localIP().toString());
