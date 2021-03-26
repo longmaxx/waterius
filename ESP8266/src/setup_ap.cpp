@@ -11,6 +11,7 @@
 #include "utils.h"
 #include "WateriusHttps.h"
 #include "master_i2c.h"
+#include "porting.h"
 
 #define AP_NAME "Waterius_" FIRMWARE_VERSION
 
@@ -20,14 +21,24 @@ extern MasterI2C masterI2C;
 SlaveData runtime_data;
 
 
-#define IMPULS_LIMIT_1 3  // Если пришло импульсов меньше 3, то перед нами 10л/имп. Если больше, то 1л/имп.
+#define IMPULS_LIMIT_1  3  // Если пришло импульсов меньше 3, то перед нами 10л/имп. Если больше, то 1л/имп.
 
-uint8_t get_factor() {
-    return (runtime_data.impulses1 - data.impulses1 <= IMPULS_LIMIT_1) ? 10 : 1;
+uint8_t get_auto_factor(uint32_t runtime_impulses, uint32_t impulses)
+{
+    return (runtime_impulses - impulses <= IMPULS_LIMIT_1) ? 10 : 1;
+}
+
+uint8_t get_factor(uint8_t combobox_factor, uint32_t runtime_impulses, uint32_t impulses, uint8_t cold_factor) {
+
+    switch (combobox_factor) {
+        case AUTO_IMPULSE_FACTOR: return get_auto_factor(runtime_impulses, impulses); 
+        case AS_COLD_CHANNEL: return cold_factor;
+        default: 
+            return combobox_factor;  // 1, 10, 100
+    }
 }
 
 #define SETUP_TIME_SEC 600UL //На какое время Attiny включает ESP (файл Attiny85\src\Setup.h)
-
 void update_data(String &message)
 {
     if (masterI2C.getSlaveData(runtime_data)) {
@@ -35,15 +46,9 @@ void update_data(String &message)
         String state0bad(F("\"Не подключён\""));
         String state1good(F("\"\""));
         String state1bad(F("\"Не подключён\""));
-        String state2good(F("\"\""));
-        String state2bad(F("\"Не подключён\""));
-        String state3good(F("\"\""));
-        String state3bad(F("\"Не подключён\""));
 
         uint32_t delta0 = runtime_data.impulses0 - data.impulses0;
         uint32_t delta1 = runtime_data.impulses1 - data.impulses1;
-        uint32_t delta2 = runtime_data.impulses2 - data.impulses2;
-        uint32_t delta3 = runtime_data.impulses3 - data.impulses3;
         
         if (delta0 > 0) {
             state0good = F("\"Подключён\"");
@@ -52,14 +57,6 @@ void update_data(String &message)
         if (delta1 > 0) {
             state1good = F("\"Подключён\"");
             state1bad = F("\"\"");
-        }
-        if (delta2 > 0) {
-            state2good = F("\"Подключён\"");
-            state2bad = F("\"\"");
-        }
-        if (delta3 > 0) {
-            state3good = F("\"Подключён\"");
-            state3bad = F("\"\"");
         }
 
         message = F("{\"state0good\": ");
@@ -70,32 +67,25 @@ void update_data(String &message)
         message += state1good;
         message += F(", \"state1bad\": ");
         message += state1bad;
-        message += F(", \"state2good\": ");
-        message += state2good;
-        message += F(", \"state2bad\": ");
-        message += state2bad;
-        message += F(", \"state3good\": ");
-        message += state3good;
-        message += F(", \"state3bad\": ");
-        message += state3bad;
         message += F(", \"elapsed\": ");
         message += String((uint32_t)(SETUP_TIME_SEC - millis()/1000.0));
+        message += F(", \"factor_cold_feedback\": ");
+        message += String(get_auto_factor(runtime_data.impulses1, data.impulses1));
+        message += F(", \"factor_hot_feedback\": ");
+        message += String(get_auto_factor(runtime_data.impulses0, data.impulses0));
         message += F(", \"error\": \"\"");
-        message += F(", \"factor\": ");
-        message += String(get_factor());
         message += F("}");
     }
     else {
-        message = F("{\"error\": \"Ошибка связи с МК\", \"factor\": 10}");
+        message = F("{\"error\": \"Ошибка связи с МК\", \"factor_cold_feedback\": 1, \"factor_hot_feedback\": 1}");
     }
 }
 
 WiFiManager wm;
-
 void handleStates(){
   LOG_INFO(FPSTR(S_AP), F("/states request"));
   String message;
-  message.reserve(300);
+  message.reserve(300); //сейчас 200
   update_data(message);
   wm.server->send(200, F("text/plain"), message);
 }
@@ -140,6 +130,8 @@ void setup_ap(Settings &sett, const SlaveData &data, const CalculatedData &cdata
     WiFiManagerParameter param_waterius_host( "whost", "Адрес сервера (включает отправку)",  sett.waterius_host, WATERIUS_HOST_LEN-1);
     wm.addParameter( &param_waterius_host );
 
+    ShortParameter param_wakeup_per("mperiod", "Период отправки показаний, мин.",  sett.wakeup_per_min);
+    wm.addParameter( &param_wakeup_per);
 
     // Настройки Blynk.сс
 
@@ -162,6 +154,7 @@ void setup_ap(Settings &sett, const SlaveData &data, const CalculatedData &cdata
     wm.addParameter( &label_mqtt);
     WiFiManagerParameter param_mqtt_host( "mhost", "Адрес сервера (включает отправку)<br/>Пример: broker.hivemq.com",  sett.mqtt_host, MQTT_HOST_LEN-1);
     wm.addParameter( &param_mqtt_host );
+
     LongParameter param_mqtt_port( "mport", "Порт",  sett.mqtt_port);
     wm.addParameter( &param_mqtt_port );
     WiFiManagerParameter param_mqtt_login( "mlogin", "Логин",  sett.mqtt_login, MQTT_LOGIN_LEN-1);
@@ -189,8 +182,35 @@ void setup_ap(Settings &sett, const SlaveData &data, const CalculatedData &cdata
     IPAddressParameter param_mask("sn", "Маска подсети",  sett.mask);
     wm.addParameter( &param_mask );
 
-    WiFiManagerParameter label_factor("<p><b>Вес импульса (авто): <a id='factor'></a> л/имп</b></p>");
-    wm.addParameter( &label_factor);
+    WiFiManagerParameter label_factor_settings("<h3>Параметры счетчиков</h3>");
+    wm.addParameter( &label_factor_settings);
+
+    WiFiManagerParameter label_cold_factor("<b>Холодная вода л/имп</b>");
+    wm.addParameter( &label_cold_factor);
+    
+    DropdownParameter dropdown_cold_factor("factorCold");
+    dropdown_cold_factor.add_option(AUTO_IMPULSE_FACTOR, "Авто", sett.factor1);
+    dropdown_cold_factor.add_option(1, "1", sett.factor1);
+    dropdown_cold_factor.add_option(10, "10", sett.factor1);
+    dropdown_cold_factor.add_option(100, "100", sett.factor1);
+    wm.addParameter(&dropdown_cold_factor);
+
+    WiFiManagerParameter label_factor_cold_feedback("<p id='fc_fb_control'>Вес импульса: <a id='factor_cold_feedback'></a> л/имп");
+    wm.addParameter( &label_factor_cold_feedback);
+
+    WiFiManagerParameter label_hot_factor("<p><b>Горячая вода л/имп</b>");
+    wm.addParameter( &label_hot_factor);
+    
+    DropdownParameter dropdown_hot_factor("factorHot");
+    dropdown_hot_factor.add_option(AS_COLD_CHANNEL, "Как у холодной", sett.factor0);
+    dropdown_hot_factor.add_option(AUTO_IMPULSE_FACTOR, "Авто", sett.factor0);
+    dropdown_hot_factor.add_option(1, "1", sett.factor0);
+    dropdown_hot_factor.add_option(10, "10", sett.factor0);
+    dropdown_hot_factor.add_option(100, "100", sett.factor0);
+    wm.addParameter(&dropdown_hot_factor);
+
+    WiFiManagerParameter label_factor_hot_feedback("<p id='fh_fb_control'>Вес импульса: <a id='factor_hot_feedback'></a> л/имп");
+    wm.addParameter( &label_factor_hot_feedback);
 
     // конец доп. настроек
     WiFiManagerParameter div_end("</div>");
@@ -226,45 +246,20 @@ void setup_ap(Settings &sett, const SlaveData &data, const CalculatedData &cdata
     wm.addParameter( &param_channel0_start);
 
 
-    WiFiManagerParameter cold2_water("<h3>Холодная вода 2</h3>");
-    WiFiManagerParameter label_cold2_info("<p>Откройте кран холодной воды, пока надпись не&nbsp;сменится на&nbsp;&laquo;подключен&raquo;</p>");
-    WiFiManagerParameter label_cold2_state("<b><p class='bad' id='state3bad'></p><p class='good' id='state3good'></p></b>");
-    WiFiManagerParameter label_cold2("<label class='cold label'>Показания холодной воды 2</label>");
-    WiFiManagerParameter hot_water2("<h3>Горячая вода 2</h3>");
-    FloatParameter       param_channel2_start( "ch2", "",  cdata.channel2);
-    WiFiManagerParameter label_hot2_info("<p>Откройте кран горячей воды, пока надпись не&nbsp;сменится на&nbsp;&laquo;подключен&raquo;</p>");
-    WiFiManagerParameter label_hot2_state("<b><p class='bad' id='state2bad'></p><p class='good' id='state2good'></p></b>");
-    WiFiManagerParameter label_hot2("<label class='hot label'>Показания горячей воды 2</label>");                     
-    FloatParameter       param_channel3_start( "ch3", "",  cdata.channel3);
-   
-    if (data.model == WATERIUS_4C2W) 
-    {
-        wm.addParameter(&cold2_water);
-                
-        wm.addParameter( &label_cold2_info);
-
-        wm.addParameter( &label_cold2_state);
-
-        wm.addParameter( &label_cold2);
-        wm.addParameter( &param_channel3_start);
-
-        wm.addParameter(&hot_water2);
-                
-        wm.addParameter( &label_hot2_info);
-        
-        wm.addParameter( &label_hot2_state );
-
-        wm.addParameter( &label_hot2);
-        wm.addParameter( &param_channel2_start);
-    }
-    
     wm.setConfigPortalTimeout(SETUP_TIME_SEC);
     wm.setConnectTimeout(ESP_CONNECT_TIMEOUT);
     
     LOG_INFO(FPSTR(S_AP), F("Start ConfigPortal"));
 
     // Запуск веб сервера на 192.168.4.1
-    wm.startConfigPortal( AP_NAME );
+    LOG_INFO(FPSTR(S_AP), F("chip id:") << getChipId());
+    
+    /*
+    String ap_name = AP_NAME "_" + String(getChipId(), HEX).substring(0, 4);
+    ap_name.toUpperCase();
+    wm.startConfigPortal(ap_name.c_str());
+    */
+    wm.startConfigPortal(AP_NAME);
 
     // Успешно подключились к Wi-Fi, можно засыпать
     LOG_INFO(FPSTR(S_AP), F("Connected to wifi. Save settings, go to sleep"));
@@ -296,32 +291,39 @@ void setup_ap(Settings &sett, const SlaveData &data, const CalculatedData &cdata
     sett.ip = param_ip.getValue();
     sett.gateway = param_gw.getValue();
     sett.mask = param_mask.getValue();
+    
+    //период отправки данных
+    sett.wakeup_per_min = param_wakeup_per.getValue();
+    LOG_INFO(FPSTR(S_AP), "wakeup period, min=" << sett.wakeup_per_min);
+
+    //Веса импульсов
+    LOG_INFO(FPSTR(S_AP), "hot dropdown=" << dropdown_hot_factor.getValue());
+    LOG_INFO(FPSTR(S_AP), "cold dropdown=" << dropdown_cold_factor.getValue());
+    
+    uint8_t combobox_factor = dropdown_cold_factor.getValue();
+    sett.factor1 = get_factor(combobox_factor, runtime_data.impulses1, data.impulses1, 1);
+    
+    combobox_factor = dropdown_hot_factor.getValue();
+    sett.factor0 = get_factor(combobox_factor, runtime_data.impulses0, data.impulses0, sett.factor1);
 
     // Текущие показания счетчиков
     sett.channel0_start = param_channel0_start.getValue();
     sett.channel1_start = param_channel1_start.getValue();
-    sett.channel2_start = param_channel2_start.getValue();
-    sett.channel3_start = param_channel3_start.getValue();
 
-    sett.liters_per_impuls = get_factor(); //param_litres_per_imp.getValue();
-    LOG_INFO(FPSTR(S_AP), "factor=" << sett.liters_per_impuls );
+    //sett.liters_per_impuls_hot = 
+    LOG_INFO(FPSTR(S_AP), "factorHot=" << sett.factor0);
+    LOG_INFO(FPSTR(S_AP), "factorCold=" << sett.factor1);
 
     // Запоминаем кол-во импульсов Attiny соответствующих текущим показаниям счетчиков
     sett.impulses0_start = runtime_data.impulses0;
     sett.impulses1_start = runtime_data.impulses1;
-    sett.impulses2_start = runtime_data.impulses2;
-    sett.impulses3_start = runtime_data.impulses3;
 
     // Предыдущие показания счетчиков. Вносим текущие значения.
     sett.impulses0_previous = sett.impulses0_start;
     sett.impulses1_previous = sett.impulses1_start;
-    sett.impulses2_previous = sett.impulses2_start;
-    sett.impulses3_previous = sett.impulses3_start;
 
     LOG_INFO(FPSTR(S_AP), "impulses0=" << sett.impulses0_start );
     LOG_INFO(FPSTR(S_AP), "impulses1=" << sett.impulses1_start );
-    LOG_INFO(FPSTR(S_AP), "impulses2=" << sett.impulses2_start );
-    LOG_INFO(FPSTR(S_AP), "impulses3=" << sett.impulses3_start );
 
     sett.setup_time = millis();
     

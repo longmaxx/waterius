@@ -29,7 +29,16 @@ public:
         return String(WiFiManagerParameter::getValue()).toInt();
     }
 };
-
+class ShortParameter : public WiFiManagerParameter {
+    public:
+    ShortParameter(const char *id,const char *placeholder, short value, const uint8_t length = 10)
+    : WiFiManagerParameter("") {
+        init(id, placeholder, String(value).c_str(), length, " type=\"number\"", WFM_LABEL_BEFORE);
+    }
+    short getValue(){
+        return String(WiFiManagerParameter::getValue()).toInt();
+    }
+};
 class FloatParameter : public WiFiManagerParameter {
 public:
 
@@ -45,7 +54,6 @@ public:
         return val.toFloat();
     }
 };
-
 class IPAddressParameter : public WiFiManagerParameter {
 public:
 
@@ -62,6 +70,36 @@ public:
         IPAddress ip;
         ip.fromString(WiFiManagerParameter::getValue());
         return ip;
+    }
+};
+
+
+class DropdownParameter : public WiFiManagerParameter {
+    public:
+    String options;
+    DropdownParameter(const char *id)
+    : WiFiManagerParameter(id, "", true, String(0).c_str(), 10) {
+        options.reserve(200);
+    }
+
+    void add_option(const int value, const char *title, const int default_value)
+    {
+        options += "<option ";
+        if (value == default_value) {
+            options += "selected ";
+        }
+        options += "value=\'";
+        options += value;
+        options += "\'>";
+        options += title;
+        options += "</option>";
+        
+        setCustomHtml(options.c_str());
+    }
+
+    uint8_t getValue(){
+        //return String(WiFiManagerParameter::getValue()).toInt();
+        return String(WiFiManagerParameter::getValue()).toInt();
     }
 };
 

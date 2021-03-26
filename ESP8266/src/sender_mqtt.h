@@ -52,24 +52,15 @@ bool send_mqtt(const Settings &sett, const SlaveData &data, const CalculatedData
         client.publish((topic + "version_esp").c_str(), String(FIRMWARE_VERSION).c_str(), true);
         client.publish((topic + "voltage_low").c_str(), String(cdata.low_voltage).c_str(), true);
         client.publish((topic + "voltage_diff").c_str(), String((float)(cdata.voltage_diff / 1000.0), 3).c_str(), true);
-        client.publish((topic + "f").c_str(), String(sett.liters_per_impuls).c_str(), true);
+        client.publish((topic + "f1").c_str(), String(sett.factor1).c_str(), true);
+        client.publish((topic + "f0").c_str(), String(sett.factor0).c_str(), true);
         client.publish((topic + "rssi").c_str(), String(cdata.rssi).c_str(), true);
         client.publish((topic + "waketime").c_str(), String(sett.wake_time).c_str(), true);
         client.publish((topic + "setuptime").c_str(), String(sett.setup_time).c_str(), true);
         client.publish((topic + "adc0").c_str(), String(data.adc0).c_str(), true);
         client.publish((topic + "adc1").c_str(), String(data.adc1).c_str(), true);
-
-        if (data.model == WATERIUS_4C2W) {
-            client.publish((topic + "ch2").c_str(), String((float)cdata.channel2,3).c_str(), true);
-            client.publish((topic + "ch3").c_str(), String((float)cdata.channel3,3).c_str(), true);
-            client.publish((topic + "delta2").c_str(), String(cdata.delta2).c_str(), true);
-            client.publish((topic + "delta3").c_str(), String(cdata.delta3).c_str(), true);
-            client.publish((topic + "imp2").c_str(), String(data.impulses2).c_str(), true);
-            client.publish((topic + "imp3").c_str(), String(data.impulses3).c_str(), true);
-            client.publish((topic + "adc2").c_str(), String(data.adc2).c_str(), true);
-            client.publish((topic + "adc3").c_str(), String(data.adc3).c_str(), true);
-        }
-
+        client.publish((topic + "period_min").c_str(), String(sett.wakeup_per_min).c_str(), true);
+        
         client.disconnect();
         return true;
     }  else {

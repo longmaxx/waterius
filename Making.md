@@ -1,8 +1,6 @@
 
 Вопросы по изготовлению задавайте тут: [issues](https://github.com/dontsovcmc/waterius/issues)
 
-Изготовление [1й версии платы тут](https://github.com/dontsovcmc/waterius/blob/7da3e404141a7a6a08e866adb6f25db93653b12a/Making.md)
-
 ## Компоненты
 
 | # | Наименование | Кол-во | Примечание | Магазин |   
@@ -20,7 +18,7 @@
 | 11 | Закрытый батарейный отсек 4xAA | 1 | У ЧипДип KLS5-812-B, качество не очень. | [aliexpress](http://s.click.aliexpress.com/e/43K45ruk)(проверенный) [chipdip](https://www.chipdip.ru/product/fc1-5230) |
 | 12 | Стабилизатор MCP1700T-3002E-TT | 1 |  | [terraelectronica](https://www.terraelectronica.ru/product/241237) |
 | 13 | Разъем под кабель на плату 4 контакта 2.54мм | 1 | Без винтов: DG141V-2.54-04P-14-00AH | [terraelectronica](https://www.terraelectronica.ru/product/1072180) |
-| 14 | [Плата](waterius-factory-board2_bottom.jpg) | 1 | или [ЛУТ](https://github.com/dontsovcmc/ImpCounter/raw/master/Board/waterius-homemade-board.png) | [заказ на OshPark](https://oshpark.com/shared_projects/gJDtn5z5) |
+| 14 | [Плата](waterius-factory-board2_bottom.jpg) | 1 | или [ЛУТ](https://github.com/dontsovcmc/ImpCounter/raw/master/Board/waterius-homemade-board.png) | [заказ на OshPark](https://oshpark.com/shared_projects/gJDtn5z5), [Gerber файлы](https://github.com/dontsovcmc/Board/waterius-factory-3.0_2020-11-28.zip) |
 + программаторы для Attiny85 и ESP8266-01
 
 ## Схема
@@ -30,10 +28,13 @@
 
 Вот так выглядит заводская плата с напаенными элеметами:
 
-<img src="https://github.com/dontsovcmc/waterius/raw/master/Board/waterius-factory-board2_top.jpg" data-canonical-src="https://github.com/dontsovcmc/waterius/raw/master/Board/waterius-factory-board2_top.jpg" width="400"/>
-<img src="https://github.com/dontsovcmc/waterius/raw/master/Board/waterius-factory-board2_bottom.jpg" data-canonical-src="https://github.com/dontsovcmc/waterius/raw/master/Board/waterius-factory-board2_bottom.jpg" width="400"/>
+<img src="https://github.com/dontsovcmc/waterius/raw/master/Board/waterius-factory-board3_top.jpg" data-canonical-src="https://github.com/dontsovcmc/waterius/raw/master/Board/waterius-factory-board3_top.jpg" width="400"/>
+<img src="https://github.com/dontsovcmc/waterius/raw/master/Board/waterius-factory-board3_bottom.jpg" data-canonical-src="https://github.com/dontsovcmc/waterius/raw/master/Board/waterius-factory-board3_bottom.jpg" width="400"/>
 
 По фотографии удобно паять.
+
+[1я версия платы](https://github.com/dontsovcmc/waterius/blob/7da3e404141a7a6a08e866adb6f25db93653b12a/Making.md)
+
 
 # Изготовление
 

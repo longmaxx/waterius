@@ -40,24 +40,14 @@ bool UserClass::sendNewData(const Settings &settings, const SlaveData &data, con
     root["email"] =         settings.waterius_email;
     root["voltage_low"] =   cdata.low_voltage;
     root["voltage_diff"] =  cdata.voltage_diff;
-    root["f"] =             settings.liters_per_impuls;
+    root["f0"] =            settings.factor0;
+    root["f1"] =            settings.factor1;
     root["rssi"] =          cdata.rssi;
     root["waketime"] =      settings.wake_time;
     root["setuptime"] =     settings.setup_time;
     root["adc0"] =          data.adc0;
     root["adc1"] =          data.adc1;
-
-    if (data.model == WATERIUS_4C2W) {
-        root["model"] =         data.model;
-        root["delta2"] =        cdata.delta2;
-        root["delta3"] =        cdata.delta3;
-        root["ch2"] =           cdata.channel2;
-        root["ch3"] =           cdata.channel3;
-        root["imp2"] =          data.impulses2;
-        root["imp3"] =          data.impulses3;
-        root["adc2"] =          data.adc2;
-        root["adc3"] =          data.adc3;
-    }
+    root["period_min"] =    settings.wakeup_per_min;
 
     serializeJson(root, jsonBody);
     LOG_INFO(FPSTR(S_SND), "JSON size:\t" << jsonBody.length());

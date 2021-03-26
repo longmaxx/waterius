@@ -21,7 +21,7 @@ class SlaveI2C
 	 static void requestEvent();
 	 static void newCommand();
 	 static void receiveEvent( int howMany );
-
+	 static void getWakeUpPeriod();
  public:
 	 void begin(const uint8_t);
 	 static void end();

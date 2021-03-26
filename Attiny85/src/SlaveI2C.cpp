@@ -6,7 +6,7 @@
 #include <Wire.h>
 
 extern struct Header info;
-
+extern int16_t wakeup_period_min;
 /* Static declaration */
 uint8_t SlaveI2C::txBufferPos = 0;
 uint8_t SlaveI2C::txBuffer[TX_BUFFER_SIZE];
@@ -38,9 +38,12 @@ void SlaveI2C::newCommand() {
 }
 
 /* Depending on the received command from master, set up the content of the txbuffer so he can get his data */
+
 void SlaveI2C::receiveEvent(int howMany) {
-	uint8_t command = Wire.read(); // Get instructions from master
-	
+	static uint8_t command;
+
+	command = Wire.read(); // Get instructions from master
+
 	newCommand();
 	switch (command) {
 		case 'B':  // данные
@@ -53,12 +56,30 @@ void SlaveI2C::receiveEvent(int howMany) {
 		case 'M':  // Разбудили ESP для настройки или передачи данных?
 			txBuffer[0] = setup_mode;
 			break;
-		case 'T':  // После настройки ESP перезагрузим, поэтому меняем режим на передачу данных
+		case 'T':  // Не используется. После настройки ESP перезагрузим, поэтому меняем режим на передачу данных
 			setup_mode = TRANSMIT_MODE;
 			break;
+		case 'S': //ESP присылает новое значение периода пробуждения
+			getWakeUpPeriod();
+			break;
+
 	}
 }
+void SlaveI2C::getWakeUpPeriod(){
+	uint8_t data[2];
 
+	data[0] = Wire.read();
+	data[1] = Wire.read();
+	uint8_t crc = Wire.read();
+	uint16_t newPeriod = (data[0]<<8) | data[1];
+
+	if ((crc != crc_8(data, 2)) || (newPeriod==0)) { 
+		wakeup_period_min = WAKEUP_DEFAULT_PER_MIN;
+	}
+	else {
+		wakeup_period_min = newPeriod;
+	}
+}
 bool SlaveI2C::masterGoingToSleep() {
 	return masterSentSleep;
 }

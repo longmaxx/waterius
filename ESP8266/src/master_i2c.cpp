@@ -35,30 +35,33 @@ uint8_t crc_8(unsigned char *b, size_t num_bytes, uint8_t crc) {
     return crc;
 }
 
-
-
 void MasterI2C::begin() {
-
     Wire.begin(SDA_PIN, SCL_PIN);
     Wire.setClock(100000L);
     Wire.setClockStretchLimit(2500L);  // Иначе связь с Attiny не надежная будут FF FF в хвосте посылки 
 }
 
+bool MasterI2C::sendCmd(uint8_t cmd ) {
+    return sendData(&cmd,1);
+}
 
-bool MasterI2C::sendCmd(const char cmd ) {
-
+bool MasterI2C::sendData(uint8_t* buf, size_t size)
+{
+    uint8_t i;
     Wire.beginTransmission( I2C_SLAVE_ADDR );
-    if (Wire.write(cmd) != 1){
-        LOG_ERROR(FPSTR(S_I2C), F("Write cmd failed"));
-        return false;
+    for(i=0; i<size; i++)
+    {
+        if (Wire.write(buf[i]) != 1){
+            LOG_ERROR(FPSTR(S_I2C), F("I2C transmitting fail."));
+            return false;
+        }
     }
     int err = Wire.endTransmission(true);
     if (err != 0) {
         LOG_ERROR(FPSTR(S_I2C), "end error:" << err);
         return false;
-    }    
-    
-    delay(1); // Дадим Attiny время подумать 
+    }
+
     return true;
 }
 
@@ -115,10 +118,8 @@ bool MasterI2C::getMode(uint8_t &mode) {
     return true;
 }
 
-bool MasterI2C::getSlaveData(SlaveData &data) {
-
+bool MasterI2C::    getSlaveData(SlaveData &data) {
     sendCmd('B');
-
     data.diagnostic = WATERIUS_NO_LINK;
 
     uint8_t dummy, crc = 0;
@@ -130,24 +131,12 @@ bool MasterI2C::getSlaveData(SlaveData &data) {
     good &= getByte(data.model, crc);
     good &= getByte(data.state0, crc);
     good &= getByte(data.state1, crc);
-    if (data.model == WATERIUS_4C2W) {
-        good &= getByte(data.state2, crc);
-        good &= getByte(data.state3, crc);
-    }
 
     good &= getUint(data.impulses0, crc);
     good &= getUint(data.impulses1, crc);
-    if (data.model == WATERIUS_4C2W) {
-        good &= getUint(data.impulses2, crc);
-        good &= getUint(data.impulses3, crc);
-    }
 
     good &= getUint16(data.adc0, crc);
     good &= getUint16(data.adc1, crc);
-    if (data.model == WATERIUS_4C2W) {
-        good &= getUint16(data.adc2, crc);
-        good &= getUint16(data.adc3, crc);
-    }
 
     good &= getByte(data.crc, dummy);
 
@@ -166,16 +155,10 @@ bool MasterI2C::getSlaveData(SlaveData &data) {
             LOG_INFO(FPSTR(S_I2C), F("MODEL: ") << data.model);
             LOG_INFO(FPSTR(S_I2C), F("state0: ") << data.state0);
             LOG_INFO(FPSTR(S_I2C), F("state1: ") << data.state1);
-            LOG_INFO(FPSTR(S_I2C), F("state2: ") << data.state2);
-            LOG_INFO(FPSTR(S_I2C), F("state3: ") << data.state3);
             LOG_INFO(FPSTR(S_I2C), F("impulses0: ") << data.impulses0);
             LOG_INFO(FPSTR(S_I2C), F("impulses1: ") << data.impulses1);
-            LOG_INFO(FPSTR(S_I2C), F("impulses2: ") << data.impulses2);
-            LOG_INFO(FPSTR(S_I2C), F("impulses3: ") << data.impulses3);
             LOG_INFO(FPSTR(S_I2C), F("adc0: ") << data.adc0);
             LOG_INFO(FPSTR(S_I2C), F("adc1: ") << data.adc1);
-            LOG_INFO(FPSTR(S_I2C), F("adc2: ") << data.adc2);
-            LOG_INFO(FPSTR(S_I2C), F("adc3: ") << data.adc3);
             LOG_INFO(FPSTR(S_I2C), F("CRC ok"));
         break;
         case WATERIUS_NO_LINK:
@@ -185,4 +168,17 @@ bool MasterI2C::getSlaveData(SlaveData &data) {
     return data.diagnostic == WATERIUS_OK;
 }
 
-
+bool MasterI2C::setWakeUpPeriod(uint16_t period)
+{
+    uint8_t txBuf[4];
+    
+    txBuf[0] = 'S';
+    txBuf[1] = (uint8_t)(period>>8);
+    txBuf[2] = (uint8_t)(period);
+    txBuf[3] = crc_8(&txBuf[1],2,0);
+    
+    if(!sendData(txBuf,4)) {
+        return false;
+    }
+    return true;
+}

@@ -25,6 +25,7 @@ CalculatedData cdata; //вычисляемые данные
 void setup()
 {
     WiFi.mode(WIFI_OFF);  //TODO  а нужна ли?
+
     memset(&cdata, 0, sizeof(cdata));
     memset(&data, 0, sizeof(data));
     LOG_BEGIN(115200);    //Включаем логгирование на пине TX, 115200 8N1
@@ -40,26 +41,21 @@ void calculate_values(const Settings &sett, const SlaveData &data, CalculatedDat
 {
     LOG_INFO(FPSTR(S_ESP), F("new impulses=") << data.impulses0 << " " << data.impulses1);
 
-    if (sett.liters_per_impuls > 0) {
-        cdata.channel0 = sett.channel0_start + (data.impulses0 - sett.impulses0_start) / 1000.0 * sett.liters_per_impuls;
-        cdata.channel1 = sett.channel1_start + (data.impulses1 - sett.impulses1_start) / 1000.0 * sett.liters_per_impuls;
-        cdata.channel2 = sett.channel2_start + (data.impulses2 - sett.impulses2_start) / 1000.0 * sett.liters_per_impuls;
-        cdata.channel3 = sett.channel3_start + (data.impulses3 - sett.impulses3_start) / 1000.0 * sett.liters_per_impuls;
-        LOG_INFO(FPSTR(S_ESP), F("new value0=") << cdata.channel0 << F(" value1=") << cdata.channel1 << F(" value2=") << cdata.channel2 << F(" value3=") << cdata.channel3);
+    if ((sett.factor1 > 0) && (sett.factor0 > 0)) {
+        cdata.channel0 = sett.channel0_start + (data.impulses0 - sett.impulses0_start) / 1000.0 * sett.factor0;
+        cdata.channel1 = sett.channel1_start + (data.impulses1 - sett.impulses1_start) / 1000.0 * sett.factor1;
+        LOG_INFO(FPSTR(S_ESP), F("new value0=") << cdata.channel0 << F(" value1=") << cdata.channel1);
         
-        cdata.delta0  = (data.impulses0 - sett.impulses0_previous)*sett.liters_per_impuls;
-        cdata.delta1 = (data.impulses1 - sett.impulses1_previous)*sett.liters_per_impuls;
-        cdata.delta2  = (data.impulses2 - sett.impulses2_previous)*sett.liters_per_impuls;
-        cdata.delta3 = (data.impulses3 - sett.impulses3_previous)*sett.liters_per_impuls;
-        LOG_INFO(FPSTR(S_ESP), F("delta0=") << cdata.delta0 << F(" delta1=") << cdata.delta1 << F(" delta2=") << cdata.delta2 << F(" delta3=") << cdata.delta3);
+        cdata.delta0  = (data.impulses0 - sett.impulses0_previous) * sett.factor0;
+        cdata.delta1 = (data.impulses1 - sett.impulses1_previous) * sett.factor1;
+        LOG_INFO(FPSTR(S_ESP), F("delta0=") << cdata.delta0 << F(" delta1=") << cdata.delta1);
     }
 }
 
 
 void loop()
 {
-    uint8_t mode = TRANSMIT_MODE;
-
+    uint8_t mode = SETUP_MODE;//TRANSMIT_MODE;
 	// спрашиваем у Attiny85 повод пробуждения и данные
     if (masterI2C.getMode(mode) && masterI2C.getSlaveData(data)) {
         //Загружаем конфигурацию из EEPROM
@@ -87,7 +83,6 @@ void loop()
 
             success = false;
         }
-        
         if (success) {
             if (mode == TRANSMIT_MODE) { 
                 //Проснулись для передачи показаний
@@ -103,14 +98,17 @@ void loop()
                 }
 
                 if (success) {
+
+                    if(!masterI2C.setWakeUpPeriod(sett.wakeup_per_min)){
+                        LOG_ERROR(FPSTR(S_I2C), F("Wakeup period wasn't set"));
+                    } //"Разбуди меня через..."
+                    else{
+                        LOG_INFO(FPSTR(S_I2C), F("Wakeup period, min:") << sett.wakeup_per_min);
+                    }
+
                     //WifiManager уже записал ssid & pass в Wifi, поэтому не надо самому заполнять
                     WiFi.begin(); 
-                    
-#ifdef BUILD_WATERIUS_4C2W                    
-                    if (data.model == WATERIUS_4C2W) {
-                        data.voltage = measure_voltage();  // чтобы посчитать diff
-                    }
-#endif
+
                     //Ожидаем подключения к точке доступа
                     uint32_t start = millis();
                     while (WiFi.status() != WL_CONNECTED && millis() - start < ESP_CONNECT_TIMEOUT) {
@@ -127,7 +125,8 @@ void loop()
             if (success 
                 && WiFi.status() == WL_CONNECTED
                 && masterI2C.getSlaveData(data)) {  //т.к. в check_voltage не проверяем crc
-
+                
+                print_wifi_mode();
                 LOG_INFO(FPSTR(S_WIF), F("Connected, IP: ") << WiFi.localIP().toString());
                 
                 cdata.rssi = WiFi.RSSI();
@@ -146,8 +145,6 @@ void loop()
                 //Сохраним текущие значения в памяти.
                 sett.impulses0_previous = data.impulses0;
                 sett.impulses1_previous = data.impulses1;
-                sett.impulses2_previous = data.impulses2;
-                sett.impulses3_previous = data.impulses3;
                 //Перешлем время на сервер при след. включении
                 sett.wake_time = millis();
 
@@ -155,7 +152,6 @@ void loop()
             }
         } 
     }
-
     LOG_INFO(FPSTR(S_ESP), F("Going to sleep"));
     
     masterI2C.sendCmd('Z');        // "Можешь идти спать, attiny"

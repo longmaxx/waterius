@@ -3,11 +3,15 @@
 
 #include <Arduino.h>
 
-#define FIRMWARE_VERSION "0.10.0"
+#define FIRMWARE_VERSION "0.10.1"
   
 
 /*
 Версии прошивки для ESP
+
+0.10.1 - 2021.02.08 - Добавлена настройка веса импульса для горячего
+                      и холодного счетчика. Добавлена настройка периода
+                      отправки данных.
 
 0.10.0 - 2020.06.16 - Поддержка версии 4C2W (на attiny85)
 
@@ -68,9 +72,6 @@
 
 #define SERVER_TIMEOUT 12000UL // Время ответа сервера, ms
 
-
-#define LITRES_PER_IMPULS_DEFAULT 10  // 10 литров на импульс
-
 #define I2C_SLAVE_ADDR 10  // i2c адрес Attiny85
 
 #define VER_6 6
@@ -92,17 +93,17 @@
 #define MQTT_PASSWORD_LEN 32
 #define MQTT_TOPIC_LEN 64
 
+#define DEFAULT_WAKEUP_PERIOD_MIN 1440
+
+#define AUTO_IMPULSE_FACTOR 2
+#define AS_COLD_CHANNEL     7
 
 struct CalculatedData {
     float    channel0;
     float    channel1;
-    float    channel2;
-    float    channel3;
 
     uint32_t delta0;
     uint32_t delta1;
-    uint32_t delta2;
-    uint32_t delta3;
 
     uint32_t voltage_diff;
     bool     low_voltage;
@@ -155,22 +156,19 @@ struct Settings
     */
     float    channel0_start;
     float    channel1_start;
-    float    channel2_start;
-    float    channel3_start;
 
     /*
     Кол-во литров на 1 импульс
     */
-    uint16_t liters_per_impuls;
-
+    uint8_t factor0;
+    uint8_t factor1;
+    
     /*
     Кол-во импульсов Attiny85 соответствующие показаниям счетчиков, 
     введенных пользователем при настройке
     */
     uint32_t impulses0_start;
     uint32_t impulses1_start;
-    uint32_t impulses2_start;
-    uint32_t impulses3_start;
 
     /*
     Не понятно, как получить от Blynk прирост показаний, 
@@ -178,8 +176,6 @@ struct Settings
     */
     uint32_t impulses0_previous;
     uint32_t impulses1_previous;
-    uint32_t impulses2_previous;
-    uint32_t impulses3_previous;
 
     /*
     Время последнего пробуждения
@@ -197,12 +193,17 @@ struct Settings
     uint32_t ip;
     uint32_t gateway;
     uint32_t mask;
-
+    
+    /*
+    Период пробуждение для отправки данных, мин
+    */
+    uint16_t wakeup_per_min;
+    
     /*
     Зарезервируем кучу места, чтобы не писать конвертер конфигураций.
     Будет актуально для On-the-Air обновлений
     */
-    uint8_t  reserved2[196];
+    uint8_t  reserved2[194];
 
     /*
     Контрольная сумма, чтобы гарантировать корректность чтения настроек

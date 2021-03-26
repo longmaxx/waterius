@@ -9,6 +9,8 @@
 #include "utils.h"
 #include "WateriusHttps.h"
 
+#include "porting.h"
+
 //Конвертируем значение переменных компиляции в строк
 #define VALUE_TO_STRING(x) #x
 #define VALUE(x) VALUE_TO_STRING(x)
@@ -61,6 +63,7 @@ bool loadConfig(struct Settings &sett)
         LOG_INFO(FPSTR(S_CFG), F("--- Waterius.ru ---- "));
         LOG_INFO(FPSTR(S_CFG), F("email=") << sett.waterius_email);
         LOG_INFO(FPSTR(S_CFG), F("host=") << sett.waterius_host << F(" key=") << sett.waterius_key);
+        LOG_INFO(FPSTR(S_CFG), F("wakeup min=") << sett.wakeup_per_min);
         
         LOG_INFO(FPSTR(S_CFG), F("--- Blynk.cc ---- "));
         LOG_INFO(FPSTR(S_CFG), F("host=") << sett.blynk_host << F(" key=") << sett.blynk_key);
@@ -83,8 +86,8 @@ bool loadConfig(struct Settings &sett)
 
         // Всегда одно и тоже будет
         LOG_INFO(FPSTR(S_CFG), F("--- Counters ---- "));
-        LOG_INFO(FPSTR(S_CFG), F("channel0_start=") << sett.channel0_start << F(", impulses0_start=") << sett.impulses0_start << F(", factor=") << sett.liters_per_impuls );
-        LOG_INFO(FPSTR(S_CFG), F("channel1_start=") << sett.channel1_start << F(", impulses1_start=") << sett.impulses1_start);
+        LOG_INFO(FPSTR(S_CFG), F("channel0 start=") << sett.channel0_start << F(", impulses=") << sett.impulses0_start << F(", factor=") << sett.factor0);
+        LOG_INFO(FPSTR(S_CFG), F("channel1 start=") << sett.channel1_start << F(", impulses=") << sett.impulses1_start << F(", factor=") << sett.factor1);
         
         return true;
 
@@ -109,7 +112,7 @@ bool loadConfig(struct Settings &sett)
         strncpy0(sett.blynk_email_template, email_template.c_str(), BLYNK_EMAIL_TEMPLATE_LEN);
 
         //strncpy0(sett.mqtt_host, MQTT_DEFAULT_HOST, MQTT_HOST_LEN);
-        String defaultTopic = String(MQTT_DEFAULT_TOPIC_PREFIX) + String(ESP.getChipId()) + "/";
+        String defaultTopic = String(MQTT_DEFAULT_TOPIC_PREFIX) + String(getChipId()) + "/";
 
         strncpy0(sett.mqtt_topic, defaultTopic.c_str(), MQTT_TOPIC_LEN);
         sett.mqtt_port = MQTT_DEFAULT_PORT;
@@ -117,8 +120,11 @@ bool loadConfig(struct Settings &sett)
         sett.gateway = IPAddress(192,168,0,1);
         sett.mask = IPAddress(255,255,255,0);
 
-        sett.liters_per_impuls = LITRES_PER_IMPULS_DEFAULT;
+        sett.factor1 = AUTO_IMPULSE_FACTOR; 
+        sett.factor0 = AS_COLD_CHANNEL;
 
+        sett.wakeup_per_min = DEFAULT_WAKEUP_PERIOD_MIN;
+        
 //Можно задать константы при компиляции, чтобы Ватериус сразу заработал
 
 #ifdef BLYNK_KEY    
