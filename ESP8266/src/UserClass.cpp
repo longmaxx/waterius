@@ -64,7 +64,11 @@ bool UserClass::sendNewData(const Settings &settings, const SlaveData &data, con
         h_address.append(s);
     }
     heatCounter["address"] = h_address;
+    root["serial0"] =       settings.serial0;
+    root["serial1"] =       settings.serial1;
+
     serializeJson(root, jsonBody);
+    //JSON size:  355  0.10.3
     LOG_INFO(FPSTR(S_SND), "JSON size:\t" << jsonBody.length());
     
     // Try to send
