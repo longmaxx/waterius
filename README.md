@@ -1,9 +1,9 @@
-### Aвтономное устройство для передачи показаний импульсных счётчиков воды по Wi-Fi
-
+### Автономное устройство для передачи показаний импульсных счётчиков воды по Wi-Fi
+Настройте передачу показаний в управляющую компанию на сайте <a href="https://waterius.ru?utm_source=github&utm_medium=link&utm_campaign=github_16092021&utm_content=github&utm_term=github" target="_blank">waterius.ru</a>. 112 сайтов УК по России и СНГ.
 # Ватериус 0.10.5
 <a href="https://travis-ci.org/dontsovcmc/waterius" target="_blank"><img src="https://travis-ci.org/dontsovcmc/waterius.svg?branch=master"></a>
 
-![waterius2-phone_](https://user-images.githubusercontent.com/6192152/113519909-0700e980-9598-11eb-8061-674978da3765.jpg)
+![waterius2-phone_](https://user-images.githubusercontent.com/3930496/149906477-6aa47cdd-f714-4546-85ff-5541c60260a2.jpeg)
 
 [Еnglish](https://github.com/dontsovcmc/waterius/blob/master/English.md)
 
@@ -67,12 +67,13 @@ Worldwide by Wildberries: [Armenia 🇦🇲](https://am.wildberries.ru/catalog/2
 
 В репозитории ещё есть однослойная для ЛУТа.
 
-# Помочь проекту
-- Разместить в соцсетях ссылку на https://waterius.ru, написать свои впечатления. 
-- Написать отзыв в офиц. группы <a href="https://vk.com/topic-183491011_40049475" target="_black">VK</a> и <a href="https://www.facebook.com/waterius/reviews/" target="_black">FB</a>.
+## Разработка 
 
-- Отправка лога ESP в вебинтерфейс (JS код есть, спасибо Владимиру)
-- OTA обновления: предложить код прошивки и пример веб сервера (можно на базе NodeMCU)
+Ветка dev для pull-request
+Ветка master только для публикации прошивок
+
+- Отправка лога ESP в веб-интерфейс (JS код есть, спасибо Владимиру)
+- OTA обновления: предложить код прошивки и пример веб-сервера (можно на базе NodeMCU)
 
 Решены:
 - ~~Записать видео установки/настройки Ватериуса (можно сразу в FB, VK)~~, спасибо Денису С.
@@ -84,7 +85,7 @@ Worldwide by Wildberries: [Armenia 🇦🇲](https://am.wildberries.ru/catalog/2
 - На пине reset сделал [OloloevReal](https://github.com/OloloevReal), вот [схема](https://github.com/dontsovcmc/waterius/issues/51)
 - Есть в клоне [Waterius-Attiny84-ESP12F](https://github.com/badenbaden/Waterius-Attiny84-ESP12F), спасибо [badenbaden]
 
-### Модицикации
+### Модификации
 [ветка attiny84](https://github.com/dontsovcmc/waterius/tree/attiny84) поддерживает плату [Waterius-Attiny84-ESP12F](https://github.com/badenbaden/Waterius-Attiny84-ESP12F) с 4мя счетчиками и 2мя датчиками протечек.
 
 [Waterius на ESP32 с NB-IoT](https://github.com/OloloevReal/Waterius32) от OloloevReal
@@ -102,7 +103,7 @@ Worldwide by Wildberries: [Armenia 🇦🇲](https://am.wildberries.ru/catalog/2
 - Ивану Коваленко и Иван Ганжа за консультации по электротехнике
 - Alex Jensen, за проект [температурного датчика](https://www.cron.dk/esp8266-on-batteries-for-years-part-1).
 - [freenetwork](https://github.com/freenetwork) за конфигурацию для HomeAssistant
-- [grffio](https://github.com/grffio) за локальный вебсервер
+- [grffio](https://github.com/grffio) за локальный веб-сервер
 - [Игорю Вахромееву](http://vakhromeev.com) за наикрутейший редизайн настроек
 - Сергею А. (г. Мурманск) за подробную инструкцию по [настройке Domoticz и NodeRed](https://www.hackster.io/dontsovcmc/domoticz-4346d5)
 - [sintech](https://github.com/sintech) за найденные и исправленные баги
@@ -116,6 +117,7 @@ Worldwide by Wildberries: [Armenia 🇦🇲](https://am.wildberries.ru/catalog/2
 - Евгению К. из Самары, Олегу из Москвы за критику и помощь с прошивкой
 - Олегу К. из Республики Беларусь за [инструкцию к MajorDoMo](https://mjdm.ru/forum/viewtopic.php?p=129000#p129000)
 - [Drafteed](https://github.com/Drafteed) за виджет карты России
+- [neitri](https://github.com/neitri) за доработки прошивки
 
 Форумам: 
 - https://electronix.ru
