@@ -2,6 +2,7 @@
 #define _WATERIUS_SETUP_h
 
 #include <Arduino.h>
+#include "PulsarTHeatCounter.h"
 
 #define FIRMWARE_VERSION "0.10.7"
   
@@ -160,7 +161,7 @@ struct HeatCounterData{
     retval_float_t power;// текущее количество калорий
     retval_float_t t_Input;// температура на входе
     retval_float_t t_Output;// температура на выходе
-}
+};
 
 /*
 Настройки хранящиеся EEPROM

@@ -25,7 +25,7 @@ typedef unsigned long retval_int_t;
 #define ERR_PACKET_PARSE_NO_END   (-2)
 #define ERR_PACKET_PARSE_FAILED   (-1)
 #define ERR_BUFFER_OVERFLOW       (-3)
-#define ERR_OK (0)
+#define ERR_SUCCESS (0)
 
 // F values
 #define HEAT_F_ERROR_COMMAND_SENT (0x00)
@@ -82,7 +82,6 @@ class PulsarTHeatCounter
     private: char buff[HEAT_BUF_LENGTH];
     private: int iBuff = 0;// текущий индекс ячейки записи в буфер
     private: unsigned char   requestCode;// текущий код запроса (F) 1 byte
-    private: char data[];
     private: Stream* port;
     public: int flag_Error;
     

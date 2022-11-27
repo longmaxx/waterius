@@ -43,7 +43,7 @@ retval_float_t PulsarTHeatCounter::readResponseF(uint8_t channel)
     
     if (iParsed >= 0)//packet parsed OK
     {
-        setError(ERR_OK);
+        setError(ERR_SUCCESS);
         //copy value bytes from buffer
         retval_float_t valData;
         memcpy(&valData,&buff[PACKET_I_DATA_START],sizeof valData);
@@ -127,12 +127,12 @@ int PulsarTHeatCounter::parsePacket(uint8_t channel)
 
 bool PulsarTHeatCounter::isSuccess()
 {
-    return flag_Error >= ERR_OK;
+    return flag_Error >= ERR_SUCCESS;
 }
 
 void PulsarTHeatCounter::setError(int errCode)
 {
-    if (flag_Error == ERR_OK)// do not clear previous error for now
+    if (flag_Error == ERR_SUCCESS)// do not clear previous error for now
         flag_Error = errCode;
 }
 
@@ -170,7 +170,7 @@ void PulsarTHeatCounter::resetBuffer()
 
 void PulsarTHeatCounter::sendCommand_ReadData(uint8_t code, uint8_t channel)
 {
-    flag_Error = ERR_OK;// reset errors
+    flag_Error = ERR_SUCCESS;// reset errors
     LOG (F("Send ReadData command\n"))
     // packet length
     uint8_t len = calcPacketLength(4); // channel mask, 4 bytes
