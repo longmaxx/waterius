@@ -69,7 +69,7 @@ bool UserClass::sendNewData(const Settings &settings, const SlaveData &data, con
     {
         char s[3];
         sprintf(s, "%x2", hcdata.address[i]);
-        h_address.append(s);
+        h_address += s;
     }
     heatCounter["address"] = h_address;
     serializeJson(root, jsonBody);

@@ -44,7 +44,7 @@ void setup()
     
     // Настраиваем работу со счетчиком тепла
     SSerial.begin(9600);
-    hc.begin(&SSerial, HeatCounterData.address);
+    hc.begin(&SSerial, hcdata.address);
     voltage.begin();
 }
 
@@ -84,9 +84,9 @@ void calculate_values(const Settings &sett, const SlaveData &data, CalculatedDat
 
 void getHeatCounterValueF (int channel, retval_float_t* value, int* errCode)
 {
-    int res = hc.readActualValueF(HEAT_CHANNEL_POWER, &hdata.power);
-    if ((hdata->errorCode == ERR_OK) && (res != ERR_OK))
-        hdata->errorCode = res;
+    int res = hc.readActualValueF(HEAT_CHANNEL_POWER, &hcdata.power);
+    if ((hcdata.errorCode == ERR_SUCCESS) && (res != ERR_SUCCESS))
+        hcdata.errorCode = res;
 }
 
 void getHeatCounterData (HeatCounterData* hdata)
@@ -202,7 +202,7 @@ void loop()
                     LOG_INFO(F("Send OK"));
                 }
 
-                UserClass::sendNewData(sett, data, cdata);
+                UserClass::sendNewData(sett, data, cdata, hcdata);
 
                 //Сохраним текущие значения в памяти.
                 sett.impulses0_previous = data.impulses0;
