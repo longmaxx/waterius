@@ -203,6 +203,10 @@ void loop()
                     LOG_INFO(F("Send OK"));
                 }
 
+                if (send_mqtt_hc(sett, data, hcdata)) {
+                    LOG_INFO(F("Send HC OK"));
+                }
+
                 UserClass::sendNewData(sett, data, cdata, hcdata);
 
                 //Сохраним текущие значения в памяти.
