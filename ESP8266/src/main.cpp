@@ -31,6 +31,10 @@ ADC_MODE(ADC_VCC);
 */
 void setup()
 {
+
+    pinMode(HEAT_DCDC_EN_PIN, OUTPUT);
+    digitalWrite( HEAT_DCDC_EN_PIN, LOW);
+
     memset(&cdata, 0, sizeof(cdata));
     memset(&data, 0, sizeof(data));
     //memset(&hcdata, 0, sizeof(hcdata));
@@ -93,8 +97,20 @@ void getHeatCounterData (HeatCounterData* hdata)
 {
     LOG_INFO(F("Start getting heat counter data."));
     getHeatCounterValueF(HEAT_CHANNEL_POWER, &(hdata->power), &(hdata->errorCode));
+    if (hdata->errorCode != ERR_SUCCESS){
+     LOG_ERROR(F("Error Reading heat counter data"));   
+     return;
+    }
     getHeatCounterValueF(HEAT_CHANNEL_T_PODVOD, &(hdata->t_Input), &(hdata->errorCode));
+    if (hdata->errorCode != ERR_SUCCESS){
+     LOG_ERROR(F("Error Reading heat counter data"));   
+     return;
+    }
     getHeatCounterValueF(HEAT_CHANNEL_T_OBRATKA, &(hdata->t_Output), &(hdata->errorCode));
+    if (hdata->errorCode != ERR_SUCCESS){
+     LOG_ERROR(F("Error Reading heat counter data"));   
+     return;
+    }
 }
 
 void loop()
@@ -185,7 +201,9 @@ void loop()
                 && WiFi.status() == WL_CONNECTED) {
                 
                 //Получаем данные со счетчика тепла. Т.к. проснулись для передачи.
+                digitalWrite( HEAT_DCDC_EN_PIN, HIGH);
                 getHeatCounterData(&hcdata);
+                digitalWrite( HEAT_DCDC_EN_PIN, LOW);
                 
                 print_wifi_mode();
                 LOG_INFO(F("Connected, IP: ") << WiFi.localIP().toString());
