@@ -91,9 +91,10 @@ void getHeatCounterValueF (int channel, retval_float_t* value, int* errCode)
 
 void getHeatCounterData (HeatCounterData* hdata)
 {
+    LOG_INFO(F("Start getting heat counter data."));
     getHeatCounterValueF(HEAT_CHANNEL_POWER, &(hdata->power), &(hdata->errorCode));
-    getHeatCounterValueF(HEAT_CHANNEL_POWER, &(hdata->t_Input), &(hdata->errorCode));
-    getHeatCounterValueF(HEAT_CHANNEL_POWER, &(hdata->t_Output), &(hdata->errorCode));
+    getHeatCounterValueF(HEAT_CHANNEL_T_PODVOD, &(hdata->t_Input), &(hdata->errorCode));
+    getHeatCounterValueF(HEAT_CHANNEL_T_OBRATKA, &(hdata->t_Output), &(hdata->errorCode));
 }
 
 void loop()
