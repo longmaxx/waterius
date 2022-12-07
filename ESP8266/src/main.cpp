@@ -115,10 +115,10 @@ void getHeatCounterData (HeatCounterData* hdata)
 
 void loop()
 {
-    uint8_t mode = SETUP_MODE; //TRANSMIT_MODE;
+    uint8_t mode = /*SETUP_MODE; */TRANSMIT_MODE;
 
 	// спрашиваем у Attiny85 повод пробуждения и данные
-    if (masterI2C.getMode(mode) && masterI2C.getSlaveData(data)) {
+    // if (masterI2C.getMode(mode) && masterI2C.getSlaveData(data)) {
         //Загружаем конфигурацию из EEPROM
         bool success = loadConfig(sett);
         if (!success) {
@@ -146,7 +146,7 @@ void loop()
             WiFi.persistent(true);   //enable saving wifi config into SDK flash area
       
             LOG_INFO(F("Set mode MANUAL_TRANSMIT to attiny"));
-            masterI2C.sendCmd('T'); // Режим "Передача"
+            // masterI2C.sendCmd('T'); // Режим "Передача"
 
             LOG_INFO(F("Restart ESP"));
             LOG_END();
@@ -257,12 +257,12 @@ void loop()
 
                 storeConfig(sett);
             }
-        } 
+        // } 
     }
-    LOG_INFO(F("Going to sleep"));
+    // LOG_INFO(F("Going to sleep"));
     
-    masterI2C.sendCmd('Z');        // "Можешь идти спать, attiny"
-    LOG_END();
+    // masterI2C.sendCmd('Z');        // "Можешь идти спать, attiny"
+    // LOG_END();
     
-    ESP.deepSleepInstant(0, RF_DEFAULT);  // Спим до следущего включения EN. Instant не ждет 92мс
+    // ESP.deepSleepInstant(0, RF_DEFAULT);  // Спим до следущего включения EN. Instant не ждет 92мс
 }
