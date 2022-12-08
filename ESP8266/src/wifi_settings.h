@@ -7,6 +7,9 @@
 #include <WiFiClient.h>
 #include "master_i2c.h"
 
+#define SSID_NAME KotNet
+#define SSID_PASS MyKotNet123
+
 #define FAKE_CRC 0x0105
 
 /*
