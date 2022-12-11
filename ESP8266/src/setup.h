@@ -5,8 +5,6 @@
 #include "PulsarTHeatCounter.h"
 
 #define FIRMWARE_VERSION "0.10.7"
-#define FIRMWARE_VERSION "0.10.5"
-  
 
 /*
 Версии прошивки для ESP
