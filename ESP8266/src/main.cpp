@@ -98,21 +98,21 @@ void getHeatCounterData (HeatCounterData* hdata)
     LOG_INFO(F("Start getting heat counter data."));
     getHeatCounterValueF(HEAT_CHANNEL_POWER, &(hdata->power), &(hdata->errorCode));
     if (hdata->errorCode != ERR_SUCCESS){
-     LOG_ERROR(F("Error Reading heat counter data"));   
+     LOG_ERROR(F("Error Reading heat counter data, power"));   
      return;
     }
     LOGF("Power: %f\n", hdata->power);
 
     getHeatCounterValueF(HEAT_CHANNEL_T_PODVOD, &(hdata->t_Input), &(hdata->errorCode));
     if (hdata->errorCode != ERR_SUCCESS){
-     LOG_ERROR(F("Error Reading heat counter data"));   
+     LOG_ERROR(F("Error Reading heat counter data, podvod"));   
      return;
     }
     LOGF("T_Input: %f\n", hdata->t_Input);
 
     getHeatCounterValueF(HEAT_CHANNEL_T_OBRATKA, &(hdata->t_Output), &(hdata->errorCode));
     if (hdata->errorCode != ERR_SUCCESS){
-     LOG_ERROR(F("Error Reading heat counter data"));   
+     LOG_ERROR(F("Error Reading heat counter data, obratka"));   
      return;
     }
     LOGF("T_Output: %f\n", hdata->t_Output);
