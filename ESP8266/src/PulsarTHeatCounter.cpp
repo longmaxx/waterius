@@ -40,6 +40,13 @@ retval_float_t PulsarTHeatCounter::readResponseF(uint8_t channel)
             break;// весь пакет принят 
         }
     }
+    if (millis() >= stopTime)
+    {
+        LOG(F("Heat counter read timeout."))
+        LOGF("Bytes count: %i\n", iBuff);
+        iParsed = ERR_PACKET_PARSE_FAILED;
+    }
+
     
     if (iParsed >= 0)//packet parsed OK
     {
