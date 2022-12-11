@@ -1,13 +1,20 @@
-### Aвтономное устройство для передачи показаний импульсных счётчиков воды по Wi-Fi
-
+### Автономное устройство для передачи показаний импульсных счётчиков воды по Wi-Fi
+Настройте передачу показаний в управляющую компанию на сайте <a href="https://waterius.ru?utm_source=github&utm_medium=link&utm_campaign=github_16092021&utm_content=github&utm_term=github" target="_blank">waterius.ru</a>. 112 сайтов УК по России и СНГ.
 # Ватериус 0.10.5
 <a href="https://travis-ci.org/dontsovcmc/waterius" target="_blank"><img src="https://travis-ci.org/dontsovcmc/waterius.svg?branch=master"></a>
 
-![waterius2-phone_](https://user-images.githubusercontent.com/6192152/113519909-0700e980-9598-11eb-8061-674978da3765.jpg)
+![waterius2-phone_](https://user-images.githubusercontent.com/3930496/149906477-6aa47cdd-f714-4546-85ff-5541c60260a2.jpeg)
 
 [Еnglish](https://github.com/dontsovcmc/waterius/blob/master/English.md)
 
-### >> [Купить](https://waterius.ru?utm_source=github&utm_medium=link&utm_campaign=github_16092021&utm_content=github&utm_term=github) <<
+### Где купить
+В России: [Yandex.market](https://market.yandex.ru/store--waterius/product/920451755?businessId=1106573&sku=101280435941) | [Aliexpress](https://s.click.aliexpress.com/e/_pujmcX9) | [Wildberries](https://www.wildberries.ru/catalog/26967283/detail.aspx) | [waterius.ru](https://waterius.ru?utm_source=github&utm_medium=link&utm_campaign=github_16092021&utm_content=github&utm_term=github)
+Worldwide by Wildberries: [Armenia 🇦🇲](https://am.wildberries.ru/catalog/26967283/detail.aspx?targetUrl=XS) | [Belarus 🇧🇾](https://by.wildberries.ru/catalog/26967283/detail.aspx?targetUrl=XS) | [France 🇫🇷](https://wildberries.fr/product?card=26967283) | [Germany 🇩🇪](https://de.wildberries.eu/product?card=26967283) | [Israel 🇮🇱](https://wildberries.co.il/product?card=26967283)  | [Italy 🇮🇹](https://it.wildberries.eu/product?card=26967283) | [Kazakhstan 🇰🇿](https://kz.wildberries.ru/catalog/26967283/detail.aspx?targetUrl=XS) | [Kyrgyzstan 🇰🇬](https://kg.wildberries.ru/catalog/26967283/detail.aspx?targetUrl=XS) | [Poland 🇵🇱](https://pl.wildberries.eu/product?card=26967283) | [Slovakia 🇸🇰](https://sk.wildberries.eu/product?card=26967283) | [Spain 🇪🇸](https://wildberries.es/product?card=26967283) | [Ukraine 🇺🇦](https://wildberries.ua/product?card=26967283) | [USA 🇺🇸](https://us.wildberries.ru/product?card=26967283)
+
+### Совместимые счётчики
+Все счётчики с импульсным выходом (провод торчит из корпуса)
+
+[Таблица со ссылками на магазины](https://github.com/dontsovcmc/waterius/issues/65)
 
 ### Характеристики
 - 2 счётчика воды [Список поддерживаемых счётчиков](https://github.com/dontsovcmc/waterius/issues/65)
@@ -50,8 +57,7 @@
 Счётчик импульсов состоит из двух микросхем. Attiny85 считает импульсы в режиме сна и сохраняет их в EEPROM. Раз в сутки она будит ESP8266 и слушает i2c линию. ESP8266 спрашивает у Attiny85 данные и отправляет их на сервер. После этого ESP8266 засыпает, а Attiny85 продолжает считать-считать-считать...
 
 ### Известные ошибки
-- Иногда (?) не подключается к Ростелекомовским роутерам: Sercomm rv6699, Innbox e70. Лечится указанием статического ip в настройках. Если у вас такие, напишите в теме: [Проблемы с роутерами](https://github.com/dontsovcmc/waterius/issues/131)
-- Подозрение на очень редкие зависания в версиях attiny 14 - 21. В 22 (0.10.5) починили, тестируем.
+- Иногда (?) не подключается к Ростелекомовским роутерам: Sercomm rv6699, Innbox e70, TP-Link AX5400. Лечится указанием статического ip в настройках или включением WPA шифрования сети. Если у вас такие, напишите в теме: [Проблемы с роутерами](https://github.com/dontsovcmc/waterius/issues/131)
 
 ## Схема
 Заводская плата:
@@ -61,12 +67,13 @@
 
 В репозитории ещё есть однослойная для ЛУТа.
 
-# Помочь проекту
-- Разместить в соцсетях ссылку на https://waterius.ru, написать свои впечатления. 
-- Написать отзыв в офиц. группы <a href="https://vk.com/topic-183491011_40049475" target="_black">VK</a> и <a href="https://www.facebook.com/waterius/reviews/" target="_black">FB</a>.
+## Разработка 
 
-- Отправка лога ESP в вебинтерфейс (JS код есть, спасибо Владимиру)
-- OTA обновления: предложить код прошивки и пример веб сервера (можно на базе NodeMCU)
+Ветка dev для pull-request
+Ветка master только для публикации прошивок
+
+- Отправка лога ESP в веб-интерфейс (JS код есть, спасибо Владимиру)
+- OTA обновления: предложить код прошивки и пример веб-сервера (можно на базе NodeMCU)
 
 Решены:
 - ~~Записать видео установки/настройки Ватериуса (можно сразу в FB, VK)~~, спасибо Денису С.
@@ -78,7 +85,7 @@
 - На пине reset сделал [OloloevReal](https://github.com/OloloevReal), вот [схема](https://github.com/dontsovcmc/waterius/issues/51)
 - Есть в клоне [Waterius-Attiny84-ESP12F](https://github.com/badenbaden/Waterius-Attiny84-ESP12F), спасибо [badenbaden]
 
-### Модицикации
+### Модификации
 [ветка attiny84](https://github.com/dontsovcmc/waterius/tree/attiny84) поддерживает плату [Waterius-Attiny84-ESP12F](https://github.com/badenbaden/Waterius-Attiny84-ESP12F) с 4мя счетчиками и 2мя датчиками протечек.
 
 [Waterius на ESP32 с NB-IoT](https://github.com/OloloevReal/Waterius32) от OloloevReal
@@ -96,7 +103,7 @@
 - Ивану Коваленко и Иван Ганжа за консультации по электротехнике
 - Alex Jensen, за проект [температурного датчика](https://www.cron.dk/esp8266-on-batteries-for-years-part-1).
 - [freenetwork](https://github.com/freenetwork) за конфигурацию для HomeAssistant
-- [grffio](https://github.com/grffio) за локальный вебсервер
+- [grffio](https://github.com/grffio) за локальный веб-сервер
 - [Игорю Вахромееву](http://vakhromeev.com) за наикрутейший редизайн настроек
 - Сергею А. (г. Мурманск) за подробную инструкцию по [настройке Domoticz и NodeRed](https://www.hackster.io/dontsovcmc/domoticz-4346d5)
 - [sintech](https://github.com/sintech) за найденные и исправленные баги
@@ -110,6 +117,7 @@
 - Евгению К. из Самары, Олегу из Москвы за критику и помощь с прошивкой
 - Олегу К. из Республики Беларусь за [инструкцию к MajorDoMo](https://mjdm.ru/forum/viewtopic.php?p=129000#p129000)
 - [Drafteed](https://github.com/Drafteed) за виджет карты России
+- [neitri](https://github.com/neitri) за доработки прошивки
 
 Форумам: 
 - https://electronix.ru
