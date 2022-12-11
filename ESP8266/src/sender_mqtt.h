@@ -99,6 +99,7 @@ bool send_mqtt_hc(const Settings &sett, const SlaveData &data, const HeatCounter
     topic += "HC/";
 
     if (client.connect(clientId.c_str(), login, pass)) {
+        client.publish((topic + "lastError").c_str(), String((int)hcdata.errorCode,8).c_str(), true);
         client.publish((topic + "power").c_str(), String((float)hcdata.power,8).c_str(), true);
         client.publish((topic + "T_IN").c_str(), String((float)hcdata.t_Input,8).c_str(), true);
         client.publish((topic + "T_OUT").c_str(), String((float)hcdata.t_Output,8).c_str(), true);

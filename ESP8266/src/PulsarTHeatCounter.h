@@ -17,14 +17,15 @@ typedef unsigned long retval_int_t;
 #define PACKET_I_PACKET_LEN (5)
 #define PACKET_I_DATA_START (6)
 // packet parse result
-#define ERR_PACKET_PARSE_OVERSIZE  (-8)
-#define ERR_PACKET_PARSE_CRC_FAILED (-7)
-#define ERR_PACKET_PARSE_BAD_CODE  (-6)
-#define ERR_PACKET_PARSE_BAD_COMMAND (-5)
-#define ERR_PACKET_PARSE_ADDRESS_FAILED (-4)
+#define ERR_PACKET_PARSE_OVERSIZE       (-9)
+#define ERR_PACKET_PARSE_CRC_FAILED     (-8)
+#define ERR_PACKET_PARSE_BAD_CODE       (-7)
+#define ERR_PACKET_PARSE_BAD_COMMAND    (-6)
+#define ERR_PACKET_PARSE_ADDRESS_FAILED (-5)
 #define ERR_PACKET_PARSE_NO_END   (-2)
 #define ERR_PACKET_PARSE_FAILED   (-1)
 #define ERR_BUFFER_OVERFLOW       (-3)
+#define ERR_READ_TIMEOUT          (-4)
 #define ERR_SUCCESS (0)
 
 // F values
