@@ -212,7 +212,7 @@ void loop()
                 
                 print_wifi_mode();
                 LOG_INFO(F("Connected, IP: ") << WiFi.localIP().toString());
-                
+                delay(60000);
                 cdata.rssi = WiFi.RSSI();
                 LOG_INFO(F("RSSI: ") << cdata.rssi);
                 LOG_INFO(F("channel: ") << cdata.channel);
@@ -230,7 +230,7 @@ void loop()
                     LOG_INFO(F("Send HC OK"));
                 }
 
-                UserClass::sendNewData(sett, data, cdata, hcdata);
+               // UserClass::sendNewData(sett, data, cdata, hcdata);
 
                 //Сохраним текущие значения в памяти.
                 sett.impulses0_previous = data.impulses0;
