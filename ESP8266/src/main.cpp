@@ -37,7 +37,7 @@ void setup()
 
     memset(&cdata, 0, sizeof(cdata));
     memset(&data, 0, sizeof(data));
-    memset(&hcdata, 0, sizeof(hcdata));
+    //memset(&hcdata, 0, sizeof(hcdata));
     LOG_BEGIN(115200);    //Включаем логгирование на пине TX, 115200 8N1
     LOG_INFO(F("Booted"));
 
@@ -88,9 +88,9 @@ void calculate_values(const Settings &sett, const SlaveData &data, CalculatedDat
 
 void getHeatCounterValueF (int channel, retval_float_t* value, int* errCode)
 {
-    int res = hc.readActualValueF(HEAT_CHANNEL_POWER, &hcdata.power);
-    if ((hcdata.errorCode == ERR_SUCCESS) && (res != ERR_SUCCESS))
-        hcdata.errorCode = res;
+    int res = hc.readActualValueF(channel, value);
+    if ((*errCode == ERR_SUCCESS) && (res != ERR_SUCCESS))
+        *errCode = res;
 }
 
 void getHeatCounterData (HeatCounterData* hdata)
@@ -101,16 +101,21 @@ void getHeatCounterData (HeatCounterData* hdata)
      LOG_ERROR(F("Error Reading heat counter data"));   
      return;
     }
+    LOGF("Power: %f\n", hdata->power);
+
     getHeatCounterValueF(HEAT_CHANNEL_T_PODVOD, &(hdata->t_Input), &(hdata->errorCode));
     if (hdata->errorCode != ERR_SUCCESS){
      LOG_ERROR(F("Error Reading heat counter data"));   
      return;
     }
+    LOGF("T_Input: %f\n", hdata->t_Input);
+
     getHeatCounterValueF(HEAT_CHANNEL_T_OBRATKA, &(hdata->t_Output), &(hdata->errorCode));
     if (hdata->errorCode != ERR_SUCCESS){
      LOG_ERROR(F("Error Reading heat counter data"));   
      return;
     }
+    LOGF("T_Output: %f\n", hdata->t_Output);
 }
 
 void loop()
