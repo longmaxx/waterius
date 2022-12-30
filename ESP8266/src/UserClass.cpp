@@ -68,7 +68,7 @@ bool UserClass::sendNewData(const Settings &settings, const SlaveData &data, con
     for (unsigned char i=0;i<HEAT_ADDR_LENGTH;i++)
     {
         char s[3];
-        sprintf(s, "%x2", hcdata.address[i]);
+        sprintf(s, "%x2", settings.hc_address[i]);
         h_address += s;
     }
     heatCounter["address"] = h_address;

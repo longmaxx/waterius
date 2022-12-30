@@ -48,7 +48,7 @@ void setup()
     
     // Настраиваем работу со счетчиком тепла
     SSerial.begin(9600);
-    hc.begin(&SSerial, hcdata.address);
+    hc.begin(&SSerial, sett.hc_address);
     voltage.begin();
 }
 
