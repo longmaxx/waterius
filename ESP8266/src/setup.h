@@ -100,8 +100,8 @@
 /*
  Пины для общения со счетчиком тепла
 */
-#define HEAT_COUNTER_PORT_RX (5)
-#define HEAT_COUNTER_PORT_TX (4)
+#define HEAT_COUNTER_PORT_RX (4)
+#define HEAT_COUNTER_PORT_TX (5)
 
 #define HEAT_DCDC_EN_PIN (12) // пин включения преобразователя 9V и конвертера RS-485
 
