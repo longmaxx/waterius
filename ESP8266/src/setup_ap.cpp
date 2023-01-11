@@ -105,6 +105,52 @@ void bindServerCallback(){
 }
 
 
+void saveHeatCounterAddress( WiFiManagerParameter param_hc, char* settHCAddress )
+{
+    String hc_serial_s = param_hc.getValue();
+    LOG_INFO("HC address=" << hc_serial_s);
+    char hc_serial_ch[hc_serial_s.length()+1];
+    hc_serial_s.toCharArray(hc_serial_ch, hc_serial_s.length()+1);
+    uint8_t i=0;
+    uint8_t iAddrr = 0;
+    while ((i<hc_serial_s.length()) && (iAddrr<HEAT_ADDR_LENGTH))
+    {
+        char tmp = (hc_serial_ch[i++] - '0')<<4;        
+        tmp |= (hc_serial_ch[i++] - '0')&0b00001111;
+        LOG_INFO("HC address_ tmp=" << String(tmp, HEX));
+        settHCAddress[iAddrr++] = tmp; 
+    };
+}
+
+WiFiManagerParameter addHeatCounterAddressParam(Settings &sett)
+{
+    char param_heatcounter_serial_curval[9] = {'0','1','2','3','4','5','6','7','\0'} ;
+    uint8_t i_param_heatcounter_serial_curval = 0;
+    char iChars[10] = {'0','1','2','3','4','5','6','7','8','9'};
+    for (uint8_t i = 0 ; i<HEAT_ADDR_LENGTH; i++)
+    {
+         char a = sett.hc_address[i];
+         char highChar = a>>4;
+         char lowChar  = a&0b00001111;
+         if ( (highChar>= 0) && (highChar <= 9) && (lowChar>=0) && (lowChar <= 9))
+         {
+            param_heatcounter_serial_curval[i_param_heatcounter_serial_curval++] =  iChars[highChar];        
+            param_heatcounter_serial_curval[i_param_heatcounter_serial_curval++] =  iChars[lowChar];
+         }
+         else
+         {
+            LOG_ERROR (F("HeatCounter: Wrong address format . Only numbers expected!"));
+            LOG_INFO(String(highChar,HEX));
+            LOG_INFO(String(lowChar,HEX));
+         }
+        
+    }
+    param_heatcounter_serial_curval[i_param_heatcounter_serial_curval++] = '\0';        
+    WiFiManagerParameter param_heatcounter_serial("hcSerial", "Серийный номер счетчик тепла", param_heatcounter_serial_curval, i_param_heatcounter_serial_curval);
+    wm.addParameter(&param_heatcounter_serial);
+    return param_heatcounter_serial;
+}
+
 void setup_ap(Settings &sett, const SlaveData &data, const CalculatedData &cdata) 
 {
     wm.debugPlatformInfo();
@@ -252,6 +298,9 @@ void setup_ap(Settings &sett, const SlaveData &data, const CalculatedData &cdata
 
     WiFiManagerParameter param_serial_hot("serialHot", "серийный номер",  sett.serial0, SERIAL_LEN-1);
     wm.addParameter(&param_serial_hot);
+    
+    // добавляем на страницу редактор для ввода адреса счетчика и заполняем его сохраненными данными
+    WiFiManagerParameter param_heatcounter_serial = addHeatCounterAddressParam(sett);
 
     wm.setConfigPortalTimeout(SETUP_TIME_SEC);
     wm.setConnectTimeout(ESP_CONNECT_TIMEOUT);
@@ -318,6 +367,9 @@ void setup_ap(Settings &sett, const SlaveData &data, const CalculatedData &cdata
     strncpy0(sett.serial0, param_serial_hot.getValue(), SERIAL_LEN);
     strncpy0(sett.serial1, param_serial_cold.getValue(), SERIAL_LEN);
 
+    //значение адреса счетчика тепла
+    saveHeatCounterAddress(param_heatcounter_serial, sett.hc_address);
+    
     // Текущие показания счетчиков
     sett.channel0_start = param_channel0_start.getValue();
     sett.channel1_start = param_channel1_start.getValue();
