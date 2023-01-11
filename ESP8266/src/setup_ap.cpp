@@ -261,6 +261,23 @@ void setup_ap(Settings &sett, const SlaveData &data, const CalculatedData &cdata
 
     WiFiManagerParameter param_serial_hot("serialHot", "серийный номер", sett.serial0, SERIAL_LEN - 1);
     wm.addParameter(&param_serial_hot);
+    // добавляем на страницу редактор для ввода адреса счетчика и заполняем его сохраненными данными
+
+    char param_heatcounter_serial_curval[9] ;
+    uint8_t i_param_heatcounter_serial_curval = 0;
+    char iChars[10] = {'0','1','2','3','4','5','6','7','8','9'};
+    for (char i = HEAT_ADDR_LENGTH ; i>0; i--)
+    {
+         char a = sett.hc_address[i-1];
+         LOG_INFO(a);
+         param_heatcounter_serial_curval[i_param_heatcounter_serial_curval++] = iChars[(a>>4)];        
+         param_heatcounter_serial_curval[i_param_heatcounter_serial_curval++] = iChars[(a&0b00001111)];        
+        
+    }
+    param_heatcounter_serial_curval[i_param_heatcounter_serial_curval] = '\0';        
+    //char tre[9] = {'0','0','1','1','2','2','3','3','\0'};
+    WiFiManagerParameter param_heatcounter_serial("hcSerial", "Серийный номер счетчик тепла", param_heatcounter_serial_curval, i_param_heatcounter_serial_curval);
+    wm.addParameter(&param_heatcounter_serial);
 
     wm.setConfigPortalTimeout(SETUP_TIME_SEC);
     wm.setConnectTimeout(ESP_CONNECT_TIMEOUT);
@@ -327,6 +344,19 @@ void setup_ap(Settings &sett, const SlaveData &data, const CalculatedData &cdata
 
     strncpy0(sett.serial0, param_serial_hot.getValue(), SERIAL_LEN);
     strncpy0(sett.serial1, param_serial_cold.getValue(), SERIAL_LEN);
+
+
+    String hc_serial_s = param_heatcounter_serial.getValue();
+    char hc_serial_ch[hc_serial_s.length()];
+    hc_serial_s.toCharArray(hc_serial_ch, hc_serial_s.length());
+    uint8_t i=0;
+    uint8_t iAddrr = 0;
+    while ((i<hc_serial_s.length()) && (iAddrr<HEAT_ADDR_LENGTH))
+    {
+        char tmp = hc_serial_ch[i++]<<4;        
+        tmp |= hc_serial_ch[i++]&0b00001111;
+        sett.hc_address[iAddrr++] = tmp; 
+    };
 
     // Текущие показания счетчиков
     sett.channel0_start = param_channel0_start.getValue();
