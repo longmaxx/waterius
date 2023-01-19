@@ -26,6 +26,8 @@ PulsarTHeatCounter hc;
 Voltage voltage; // клас монитора питания
 ADC_MODE(ADC_VCC);
 
+
+uint8_t modeT;
 /*
 Выполняется однократно при включении
 */
@@ -50,6 +52,8 @@ void setup()
     SSerial.begin(9600);
     hc.begin(&SSerial, hcdata.address);
     voltage.begin();
+
+    modeT = SETUP_MODE;
 }
 
 void wifi_handle_event_cb(System_Event_t *evt) {
@@ -120,8 +124,8 @@ void getHeatCounterData (HeatCounterData* hdata)
 
 void loop()
 {
-    uint8_t mode = /*SETUP_MODE; */TRANSMIT_MODE;
-
+     
+    uint8_t mode = modeT;//TRANSMIT_MODE; //SETUP_MODE;
 	// спрашиваем у Attiny85 повод пробуждения и данные
     // if (masterI2C.getMode(mode) && masterI2C.getSlaveData(data)) {
         //Загружаем конфигурацию из EEPROM
@@ -259,8 +263,9 @@ void loop()
                     LOG_INFO(F("Wakeup period, min:") << sett.wakeup_per_min);
                     LOG_INFO(F("Wakeup period, tick:") << sett.set_wakeup);
                 }
-
+                LOG_INFO("BEFORE SAVE");
                 storeConfig(sett);
+                modeT = TRANSMIT_MODE; //SETUP_MODE;
             }
         // } 
     }

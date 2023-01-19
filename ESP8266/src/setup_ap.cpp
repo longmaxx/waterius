@@ -41,7 +41,7 @@ uint8_t get_factor(uint8_t combobox_factor, uint32_t runtime_impulses, uint32_t 
 #define SETUP_TIME_SEC 600UL //На какое время Attiny включает ESP (файл Attiny85\src\Setup.h)
 void update_data(String &message)
 {
-    if (masterI2C.getSlaveData(runtime_data)) {
+    //if (masterI2C.getSlaveData(runtime_data)) {
         String state0good(F("\"\""));
         String state0bad(F("\"Не подключён\""));
         String state1good(F("\"\""));
@@ -75,10 +75,10 @@ void update_data(String &message)
         message += String(get_auto_factor(runtime_data.impulses0, data.impulses0));
         message += F(", \"error\": \"\"");
         message += F("}");
-    }
-    else {
-        message = F("{\"error\": \"Ошибка связи с МК\", \"factor_cold_feedback\": 1, \"factor_hot_feedback\": 1}");
-    }
+    // }
+    // else {
+    //     message = F("{\"error\": \"Ошибка связи с МК\", \"factor_cold_feedback\": 1, \"factor_hot_feedback\": 1}");
+    // }
 }
 
 WiFiManager wm;
@@ -393,5 +393,6 @@ void setup_ap(Settings &sett, const SlaveData &data, const CalculatedData &cdata
     sett.setup_finished_counter++;
 
     sett.crc = FAKE_CRC; // todo: сделать нормальный crc16
+    LOG_INFO("BeforeSaveCONFIG==============");
     storeConfig(sett);
 }
