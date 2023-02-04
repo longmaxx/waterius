@@ -31,13 +31,12 @@ ADC_MODE(ADC_VCC);
 */
 void setup()
 {
-
     pinMode(HEAT_DCDC_EN_PIN, OUTPUT);
     digitalWrite( HEAT_DCDC_EN_PIN, LOW);
 
     memset(&cdata, 0, sizeof(cdata));
     memset(&data, 0, sizeof(data));
-    //memset(&hcdata, 0, sizeof(hcdata));
+    memset(&hcdata, 0, sizeof(hcdata));
     LOG_BEGIN(115200); //Включаем логгирование на пине TX, 115200 8N1
     LOG_INFO(F("Booted"));
 
