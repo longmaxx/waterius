@@ -11,27 +11,17 @@
 // Dallas CRC x8+x5+x4+1
 uint8_t crc_8(unsigned char *b, size_t num_bytes, uint8_t crc)
 {
-    uint8_t i;
-    for (size_t a = 0; a < num_bytes; a++)
+    while (num_bytes--)
     {
-        i = (*(b + a) ^ crc) & 0xff;
-        crc = 0;
-        if (i & 1)
-            crc ^= 0x5e;
-        if (i & 2)
-            crc ^= 0xbc;
-        if (i & 4)
-            crc ^= 0x61;
-        if (i & 8)
-            crc ^= 0xc2;
-        if (i & 0x10)
-            crc ^= 0x9d;
-        if (i & 0x20)
-            crc ^= 0x23;
-        if (i & 0x40)
-            crc ^= 0x46;
-        if (i & 0x80)
-            crc ^= 0x8c;
+        uint8_t inbyte = *b++;
+        for (uint8_t i = 8; i; i--)
+        {
+            uint8_t mix = (crc ^ inbyte) & 0x01;
+            crc >>= 1;
+            if (mix)
+                crc ^= 0x8C;
+            inbyte >>= 1;
+        }
     }
     return crc;
 }
@@ -63,7 +53,7 @@ bool MasterI2C::sendData(uint8_t *buf, size_t size)
     int err = Wire.endTransmission(true);
     if (err != 0)
     {
-        LOG_ERROR("end error:" << err);
+        LOG_ERROR(F("end error:") << err);
         return false;
     }
 
@@ -72,7 +62,6 @@ bool MasterI2C::sendData(uint8_t *buf, size_t size)
 
 bool MasterI2C::getByte(uint8_t &value, uint8_t &crc)
 {
-
     if (Wire.requestFrom(I2C_SLAVE_ADDR, 1) != 1)
     {
         LOG_ERROR(F("RequestFrom failed"));
@@ -119,8 +108,7 @@ bool MasterI2C::getUint(uint32_t &value, uint8_t &crc)
 
 bool MasterI2C::getMode(uint8_t &mode)
 {
-
-    uint8_t crc; // not used
+    uint8_t crc = init_crc;
     mode = TRANSMIT_MODE;
     if (!sendCmd('M') || !getByte(mode, crc))
     {
@@ -136,8 +124,15 @@ bool MasterI2C::getSlaveData(SlaveData &data)
     sendCmd('B');
     data.diagnostic = WATERIUS_NO_LINK;
 
-    uint8_t dummy, crc = 0;
+    uint8_t dummy, crc = init_crc;
     bool good = getByte(data.version, crc);
+
+    if (data.version < 29) {
+        init_crc = 0;  // в версиях <29 инициализация идет нулём
+        crc = 0;
+        crc = crc_8(&data.version, 1, crc);
+    }
+
     good &= getByte(data.service, crc);
     good &= getUint16(data.reserved4, crc);
     good &= getByte(data.reserved, crc);
@@ -145,8 +140,8 @@ bool MasterI2C::getSlaveData(SlaveData &data)
 
     good &= getByte(data.resets, crc);
     good &= getByte(data.model, crc);
-    good &= getByte(data.state0, crc);
-    good &= getByte(data.state1, crc);
+    good &= getByte(data.counter_type0, crc);
+    good &= getByte(data.counter_type1, crc);
 
     good &= getUint(data.impulses0, crc);
     good &= getUint(data.impulses1, crc);
@@ -164,15 +159,15 @@ bool MasterI2C::getSlaveData(SlaveData &data)
     switch (data.diagnostic)
     {
     case WATERIUS_BAD_CRC:
-        LOG_ERROR(F("CRC wrong"));
+        LOG_ERROR(F("!!! CRC wrong !!!!, go to sleep"));
     case WATERIUS_OK:
         LOG_INFO(F("version: ") << data.version);
         LOG_INFO(F("service: ") << data.service);
         LOG_INFO(F("setup_started_counter: ") << data.setup_started_counter);
         LOG_INFO(F("resets: ") << data.resets);
         LOG_INFO(F("MODEL: ") << data.model);
-        LOG_INFO(F("state0: ") << data.state0);
-        LOG_INFO(F("state1: ") << data.state1);
+        LOG_INFO(F("counter_type0: ") << data.counter_type0);
+        LOG_INFO(F("counter_type1: ") << data.counter_type1);
         LOG_INFO(F("impulses0: ") << data.impulses0);
         LOG_INFO(F("impulses1: ") << data.impulses1);
         LOG_INFO(F("adc0: ") << data.adc0);
@@ -193,7 +188,23 @@ bool MasterI2C::setWakeUpPeriod(uint16_t period)
     txBuf[0] = 'S';
     txBuf[1] = (uint8_t)(period >> 8);
     txBuf[2] = (uint8_t)(period);
-    txBuf[3] = crc_8(&txBuf[1], 2, 0);
+    txBuf[3] = crc_8(&txBuf[1], 2, 0xff);
+
+    if (!sendData(txBuf, 4))
+    {
+        return false;
+    }
+    return true;
+}
+
+bool MasterI2C::setCountersType(const uint8_t type0, const uint8_t type1)
+{
+    uint8_t txBuf[4];
+
+    txBuf[0] = 'C';
+    txBuf[1] = type0;
+    txBuf[2] = type1;
+    txBuf[3] = crc_8(&txBuf[1], 2, init_crc);
 
     if (!sendData(txBuf, 4))
     {

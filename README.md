@@ -1,6 +1,18 @@
-### Автономное устройство для передачи показаний импульсных счётчиков воды по Wi-Fi
-Настройте передачу показаний в управляющую компанию на сайте <a href="https://waterius.ru?utm_source=github&utm_medium=link&utm_campaign=github_16092021&utm_content=github&utm_term=github" target="_blank">waterius.ru</a>. 112 сайтов УК по России и СНГ.
-# Ватериус 0.10.5
+# Ватериус 0.11.8
+## Wi-Fi приставка для импульсных счётчиков воды и газа
+✅ Протоколы HTTP, MQTT
+
+✅ Поддержка <a href="https://www.home-assistant.io/" targe="_blank">HomeAssistant</a>,  <a href="https://www.hackster.io/dontsovcmc/domoticz-4346d5" targe="_blank">Domoticz</a>, <a href="https://spruthub.ru" targe="_blank">SprutHub</a> 
+
+✅ Личный кабинет <a href="https://waterius.ru?utm_source=github&utm_medium=link&utm_campaign=github_16092021&utm_content=github&utm_term=github" target="_blank">waterius.ru</a>
+
+- автоматическая <a href="https://waterius.ru?utm_source=github&utm_medium=link&utm_campaign=github_16092021&utm_content=github&utm_term=github" target="_blank">сдача показаний счётчиков</a> в 100+ «водоканалов» России и СНГ.
+- отправка на электронную почту
+- отправка по СМС 
+- телеграм бот
+
+✅ Работает от 3-х батареек АА несколько лет
+
 <a href="https://travis-ci.org/dontsovcmc/waterius" target="_blank"><img src="https://travis-ci.org/dontsovcmc/waterius.svg?branch=master"></a>
 
 ![waterius2-phone_](https://user-images.githubusercontent.com/3930496/149906477-6aa47cdd-f714-4546-85ff-5541c60260a2.jpeg)
@@ -8,31 +20,32 @@
 [Еnglish](https://github.com/dontsovcmc/waterius/blob/master/English.md)
 
 ### Где купить
-В России: [Yandex.market](https://market.yandex.ru/store--waterius/product/920451755?businessId=1106573&sku=101280435941) | [Aliexpress](https://s.click.aliexpress.com/e/_pujmcX9) | [Wildberries](https://www.wildberries.ru/catalog/26967283/detail.aspx) | [waterius.ru](https://waterius.ru?utm_source=github&utm_medium=link&utm_campaign=github_16092021&utm_content=github&utm_term=github)
-Worldwide by Wildberries (not works...): [Armenia 🇦🇲](https://am.wildberries.ru/catalog/26967283/detail.aspx?targetUrl=XS) | [Belarus 🇧🇾](https://by.wildberries.ru/catalog/26967283/detail.aspx?targetUrl=XS) | [France 🇫🇷](https://wildberries.fr/product?card=26967283) | [Germany 🇩🇪](https://de.wildberries.eu/product?card=26967283) | [Israel 🇮🇱](https://wildberries.co.il/product?card=26967283)  | [Italy 🇮🇹](https://it.wildberries.eu/product?card=26967283) | [Kazakhstan 🇰🇿](https://kz.wildberries.ru/catalog/26967283/detail.aspx?targetUrl=XS) | [Kyrgyzstan 🇰🇬](https://kg.wildberries.ru/catalog/26967283/detail.aspx?targetUrl=XS) | [Poland 🇵🇱](https://pl.wildberries.eu/product?card=26967283) | [Slovakia 🇸🇰](https://sk.wildberries.eu/product?card=26967283) | [Spain 🇪🇸](https://wildberries.es/product?card=26967283) | [Ukraine 🇺🇦](https://wildberries.ua/product?card=26967283) | [USA 🇺🇸](https://us.wildberries.ru/product?card=26967283)
+
+В России: [waterius.ru](https://waterius.ru?utm_source=github&utm_medium=link&utm_campaign=github_16092021&utm_content=github&utm_term=github) | [Ozon](https://ozon.ru/product/vaterius-umnaya-pristavka-k-schetchikam-vody-wi-fi-dlya-impulsnyh-schetchikov-goryachego-i-366409307/?utm_source=github&utm_campaign=vendor_org_160471_sell_page&hs=1) | [Yandex.market](https://market.yandex.ru/store--waterius/product/920451755?businessId=1106573&sku=101280435941) | [Wildberries](https://global.wildberries.ru/product?card=26967283)
+
+Worldwide by Wildberries: [Armenia 🇦🇲](https://global.wildberries.ru/product?card=26967283) | [Belarus 🇧🇾](https://global.wildberries.ru/product?card=26967283) | [Kyrgyzstan 🇰🇬](https://global.wildberries.ru/product?card=26967283) | [Kazakhstan 🇰🇿](https://global.wildberries.ru/product?card=26967283)
 
 ### Совместимые счётчики
-Все счётчики с импульсным выходом (провод торчит из корпуса)
-
-[Таблица со ссылками на магазины](https://github.com/dontsovcmc/waterius/issues/65)
+Все счётчики с [импульсным выходом](https://github.com/dontsovcmc/waterius/issues/65) (провод торчит из корпуса)
 
 ### Характеристики
-- 2 счётчика воды [Список поддерживаемых счётчиков](https://github.com/dontsovcmc/waterius/issues/65)
+- 2 счётчика
 - 3 АА батарейки (~2-4 года работы)
-- передача по Wi-Fi раз в сутки
-- не нужно знать, сколько литров на импульс (Ватериус сам определит 1 или 10л/имп)
+- передача по Wi-Fi
+- не нужно знать, вес импульса у счётчика воды (Ватериус сам определит 1 или 10л/имп)
 - не нужно знать, какого типа выход: "сухой контакт" или "НАМУР"
-- флаг низкого заряда (экспериментально)
-- настраиваемый период отправки (с 0.10.1)
-- ручная настройка веса импульса (с 0.10.1)
+- настраиваемый период отправки
+- ручная настройка веса импульса
+- дискавери для Home Assistant
+- возможно указать свои: веб сервер, MQTT брокер, сервер Blynk, NTP сервер
 
 #### Данные с Ватериуса можно увидеть:
 * на сайте <a href="https://waterius.ru?utm_source=github&utm_medium=link&utm_campaign=github_16092021&utm_content=github&utm_term=github">waterius.ru</a>
-* в приложении [Blynk 0.1](https://blynk.io) (под [Android](https://play.google.com/store/apps/details?id=cc.blynk), [iOS](https://itunes.apple.com/us/app/blynk-control-arduino-raspberry/id808760481?ls=1&mt=8)). [Настройка Ватериуса](https://github.com/dontsovcmc/waterius/wiki/%D0%9D%D0%B0%D1%81%D1%82%D1%80%D0%BE%D0%B9%D0%BA%D0%B0-%D0%BF%D1%80%D0%B8%D0%BB%D0%BE%D0%B6%D0%B5%D0%BD%D0%B8%D1%8F-Blynk) работает только до конца 2021г!
+* в HomeAssistant [инструкция с пояснениями](Home_Assistant_setup.md), [конфигурация](https://github.com/dontsovcmc/waterius/blob/master/homeassistant.configuration.yaml), [обсуждение](https://github.com/dontsovcmc/waterius/issues/86)
+* в Domoticz [инструкция](https://www.hackster.io/dontsovcmc/domoticz-4346d5)
+* в SprutHub [инструкция](https://wiki.spruthub.ru/%D0%A1%D0%BE%D0%B7%D0%B4%D0%B0%D0%BD%D0%B8%D0%B5_%D0%BA%D0%BE%D0%BD%D1%82%D1%80%D0%BE%D0%BB%D0%BB%D0%B5%D1%80%D0%B0_MQTT)
 * на вашем [HTTP/HTTPS сервере](https://github.com/dontsovcmc/waterius/blob/master/Export.md#%D0%BD%D0%B0%D1%81%D1%82%D1%80%D0%BE%D0%B9%D0%BA%D0%B0-%D0%BE%D1%82%D0%BF%D1%80%D0%B0%D0%B2%D0%BA%D0%B8-%D0%BF%D0%BE-http-%D1%81%D0%B2%D0%BE%D0%B9-%D1%81%D0%B5%D1%80%D0%B2%D0%B5%D1%80)
 * в MQTT клиенте [описание полей и настройка](https://github.com/dontsovcmc/waterius/blob/master/Export.md#настройка-отправки-по-mqtt)
-  * в HomeAssistant [инструкция с пояснениями](Home_Assistant_setup.md), [конфигурация](https://github.com/dontsovcmc/waterius/blob/master/homeassistant.configuration.yaml), [обсуждение](https://github.com/dontsovcmc/waterius/issues/86)
-  * в Domoticz [инструкция](https://www.hackster.io/dontsovcmc/domoticz-4346d5)
 * там, куда сами запрограммируете
   * [httpwaterius](https://github.com/grffio/httpwaterius) - web сервер с простым UI от [grffio](https://github.com/grffio)
 * передать сразу в управляющую компанию через сайт [waterius.ru](https://waterius.ru?utm_source=github&utm_medium=link&utm_campaign=github_16092021&utm_content=github&utm_term=github).
@@ -44,20 +57,25 @@ Worldwide by Wildberries (not works...): [Armenia 🇦🇲](https://am.wildberri
 ## Аналоги
 [Заводские и DIY](https://github.com/dontsovcmc/waterius/issues/10)
 
-## Изготовление
+## DIY Сделать самому
 
-[Прошивки HEX, BIN](https://github.com/dontsovcmc/waterius/releases)
+[Скачать прошивки](https://github.com/dontsovcmc/waterius/releases)
 
-Народная инструкция в Телеграм чате: [waterius_forum](https://t.me/waterius_forum)
+Народная инструкция в инфо Телеграм чата: [waterius_forum](https://t.me/waterius_forum)
 - [Список деталей и создание платы](https://github.com/dontsovcmc/waterius/blob/master/Making.md)
 - [Прошивка Attiny85 и ESP](https://github.com/dontsovcmc/waterius/blob/master/Firmware.md) 
 - [Установка и настройка](https://github.com/dontsovcmc/waterius/blob/master/Setup.md) 
+
+### Геркон для газового счётчика
+
+Корпус для геркона под газовый счетчик BK-G4T [bk-g4t-sensor.zip](https://github.com/dontsovcmc/waterius/files/10365883/bk-g4t-sensor.zip)
 
 ## Принцип работы
 Счётчик импульсов состоит из двух микросхем. Attiny85 считает импульсы в режиме сна и сохраняет их в EEPROM. Раз в сутки она будит ESP8266 и слушает i2c линию. ESP8266 спрашивает у Attiny85 данные и отправляет их на сервер. После этого ESP8266 засыпает, а Attiny85 продолжает считать-считать-считать...
 
 ### Известные ошибки
-- Иногда (?) не подключается к Ростелекомовским роутерам: Sercomm rv6699, Innbox e70, TP-Link AX5400. Лечится указанием статического ip в настройках или включением WPA шифрования сети. Если у вас такие, напишите в теме: [Проблемы с роутерами](https://github.com/dontsovcmc/waterius/issues/131)
+- Иногда не подключается к Ростелекомовским роутерам: Sercomm rv6699, Innbox e70, TP-Link AX5400. Лечится указанием статического ip в настройках или включением WPA шифрования сети. Если у вас такие, напишите в теме: [Проблемы с роутерами](https://github.com/dontsovcmc/waterius/issues/131)
+- До версии 0.11.7 не подключается к Wi-Fi с пробелом в названии.
 
 ## Схема
 Заводская плата:
@@ -119,6 +137,10 @@ Worldwide by Wildberries (not works...): [Armenia 🇦🇲](https://am.wildberri
 - [Drafteed](https://github.com/Drafteed) за виджет карты России
 - [neitri](https://github.com/neitri) за доработки прошивки
 - [L2jLiga](https://github.com/L2jLiga) за обновление конфигурации Home Assistant
+- nyroux за корпус геркона для газового счётчика
+- Anat0liyBM за поддержку discovery HA
+- [vzagorovskiy](https://github.com/vzagorovskiy) за большое обновление [0.11.0](https://github.com/dontsovcmc/waterius/releases/tag/0.11.0-beta)
+- [abrant-ru](https://github.com/abrant-ru) за поддержку счётчиков с выходом "открытый коллектор" (короткими импульсами)
 
 Форумам: 
 - https://electronix.ru
