@@ -47,8 +47,12 @@ void setup()
     
     // Настраиваем работу со счетчиком тепла
     SSerial.begin(9600);
+    SSerial.write("KUKU");
     hc.begin(&SSerial, sett.hc_address);
     voltage.begin();
+    digitalWrite( HEAT_DCDC_EN_PIN, HIGH);
+    delay(5000);
+    digitalWrite( HEAT_DCDC_EN_PIN, LOW);
 }
 
 void wifi_handle_event_cb(System_Event_t *evt)
@@ -102,16 +106,19 @@ void getHeatCounterData (HeatCounterData* hdata)
      LOG_ERROR(F("Error Reading heat counter data"));   
      return;
     }
+    LOG_INFO("Heat Calories: "+ String(hdata->power));
     getHeatCounterValueF(HEAT_CHANNEL_T_PODVOD, &(hdata->t_Input), &(hdata->errorCode));
     if (hdata->errorCode != ERR_SUCCESS){
      LOG_ERROR(F("Error Reading heat counter data"));   
      return;
     }
+    LOG_INFO("Heat T_Input: "+ String(hdata->t_Input));
     getHeatCounterValueF(HEAT_CHANNEL_T_OBRATKA, &(hdata->t_Output), &(hdata->errorCode));
     if (hdata->errorCode != ERR_SUCCESS){
      LOG_ERROR(F("Error Reading heat counter data"));   
      return;
     }
+    LOG_INFO("Heat T_Output: "+ String(hdata->t_Output));
 }
 void loop()
 {
@@ -213,6 +220,7 @@ void loop()
 
                 //Получаем данные со счетчика тепла. Т.к. проснулись для передачи.
                 digitalWrite( HEAT_DCDC_EN_PIN, HIGH);
+                delay(2000);
                 getHeatCounterData(&hcdata);
                 digitalWrite( HEAT_DCDC_EN_PIN, LOW);
                 
