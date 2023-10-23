@@ -4,10 +4,83 @@
 #include <Arduino.h>
 #include "PulsarTHeatCounter.h"
 
-#define FIRMWARE_VERSION "0.10.7"
+#define FIRMWARE_VERSION "0.11.9"
 
 /*
 Версии прошивки для ESP
+
+0.11.9 - 2023.09.15 - dontsovcmc
+                      1. Статус подключения к Wi-Fi
+                      2. Чекбокс отображения пароля
+                      3. Очистка пароля при выборе Wi-Fi
+                      4. Текст счётчиков при повторной настройке другой
+                      5. Вес импульса отображается если выбрано "Авто" 
+                      
+0.11.8 - 2023.08.18 - dontsovcmc
+                      1. Перепутаны названия ГВС/ХВС в HA discovery 
+
+0.11.7 - 2023.08.09 - dontsovcmc
+                      1. не дублируется список wi-fi сетей при настройке
+                      2. Теперь ПРОШИВКА ATINY для коротких импульсов! (attiny85 only, sorry)
+                      3. Добавил разное имя датчиков для HomeAssistant
+                      4. с версии 0.11.6 style.css из файла
+                      5. WiFiManager ветка waterius_release_112
+                         - возможно устранена ошибка подключения к SSID с пробелом
+
+0.11.6 - 2023.08.05 - dontsovcmc
+                      1. версия прошивки attiny=30 
+
+0.11.5 - 2023.04.30 - dontsovcmc
+                      1. Поддержка обычной прошивки attiny < 29
+                      2. Комбобоксы в настройках
+                      3. Убрал поля эл. почты в blynk
+
+0.11.4 - 2023.04.22 - dontsovcmc
+                      1. Поддержка типа входа attiny
+                      2. factor - uint16_t
+                      3. Новые параметры в ESP как цифры - очень плохо, но combobox большие и крашут ESP.
+
+0.11.3 - 2023.03.18 - dontsovcmc
+                      1. Счетчики попыток починил
+
+0.11.2 - 2023.03.02 - dontsovcmc, neitri
+                      1. WifiManager обновлен до v2.0.15-rc.1
+                      2. Переполнение массивов, очистка памяти
+                      3. Подсчет crc более компактный
+
+0.11.1 - 2023.02.28 - neitri, dontsovcmc
+                      1. Указанный пользователем NTP сервер используется. 
+
+0.11.0 - 2023.01.23 - dontsovcmc Anat0liyBM vzagorovskiy
+                      1. PubSubClient 2.7.0 -> 2.8.0
+                      2. Отправка описания параметров в HomeAssistant
+                      3. В поля данных
+                      - mac переименован в router_mac, формат шестнадцатиричный разделенный двоеточием
+                      - mac - MAC адрес ESP, формат шестнадцатиричный разделенный двоеточием
+                      - esp_id - id ESP, в десятичном формате
+                      - ip - IP адрес ESP
+                      4. ArduinoJson 6.15.1->6.18.3
+                      5. Формат имени точки доступа waterius-ИДЕНТИФИКАТОР_ЕСП-НОМЕР_ВЕРСИИ_ПРОШИВКИ
+                      6. Имя хоста изменено на waterius-ИДЕНТИФИКАТОР_ЕСП идентиификтр в десятисном виде
+                      7. Формирование одного JSON для публикации по MQTT и HTTP
+                      8. Возможность публиковать всю информацию в один топик MQTT в формате JSON
+                      9. Установка часов выполняется вне зависимости будет ли запрос по https. Время используется для MQTT.
+                      10. В класс Voltage добавлен метод измерения % батареи, немного исправлен признак севшей батареи.
+                      11. Оптимизировано использование памяти при работе по https
+                      12. Добавлена возможность использования самоподписанных сертификатов
+                      13. После настройки устройства автодискавери топики будут удалены, т.к. пользователь мог именить форматы.
+                      14. Убраны глобальные переменные для https и mqtt чтобы сэкономить память
+                      15. Добавлена публикация вспомогательных показаний через json_attributes при автодискавери в HA, что позволило сильно сократить кол-во запросов
+                      16. Добавлена опция для сенсовров в HA, force_update сенсор будет обновляться при получении сообщения даже если значение не изменилось
+                      17. Доработано измерение напряжения, теперь отправляются усредненные показания напряжения.
+                      18. Напряжение измеряется в фоне раз в 300мс
+                      19. Добавлены признаки интеграции с HA, MQTT, blynk
+                      20. Добавлена подписка на изменения параметров в HA
+                      21. Добавлена кастомная реализация синхронизации времени по NTP
+                      22. Добавлены функции по корректному подключению/отключением от WIFI при режиме глубокого сна
+                      23. Сохраняется послений успешный  BSSID и канал точки доступа для быстрого подключения к WIFI
+                      24. Рефакторинг функции отправки на сайт
+                      25. Добавлена возможность пользователю указать свой NTP сервер, если не удалось с этого сервера получить время то будет браться время по серврам из пула
 
 0.10.7 - 2022.04.20 - dontsovcmc
                       1. issues/227: не работали ssid, pwd указанные при компиляции
@@ -88,14 +161,17 @@
 /* 
     Уровень логирования
 */
-#define LOGLEVEL 2
-//#define DEBUG_ESP_HTTP_CLIENT
-//#define DEBUG_ESP_PORT Serial
+
+// уровни логирования WifiManager
+#ifndef DWM_DEBUG_LEVEL
+#define DWM_DEBUG_LEVEL 0
+#endif
+
+#define BRAND_NAME "waterius"
 
 #define WATERIUS_DEFAULT_DOMAIN "https://cloud.waterius.ru"
 
-#define MQTT_DEFAULT_TOPIC_PREFIX "waterius/" // Проверка: mosquitto_sub -h test.mosquitto.org -t "waterius/#" -v
-#define MQTT_DEFAULT_PORT 1883
+#define ESP_CONNECT_TIMEOUT 10000UL // Время подключения к точке доступа, ms
 
 /*
  Пины для общения со счетчиком тепла
@@ -112,46 +188,114 @@
 
 #define I2C_SLAVE_ADDR 10 // i2c адрес Attiny85
 
-#define VER_6 6
-#define CURRENT_VERSION VER_6
+#define VER_8 8
+#define VER_9 9
+#define CURRENT_VERSION VER_9
 
 #define EMAIL_LEN 40
 
 #define WATERIUS_KEY_LEN 34
-#define WATERIUS_HOST_LEN 64
+#define HOST_LEN 64
 
 #define BLYNK_KEY_LEN 34
-#define BLYNK_HOST_LEN 32
 
 #define BLYNK_EMAIL_TITLE_LEN 64
 #define BLYNK_EMAIL_TEMPLATE_LEN 200
 
-#define MQTT_HOST_LEN 64
 #define MQTT_LOGIN_LEN 32
 #define MQTT_PASSWORD_LEN 32
 #define MQTT_TOPIC_LEN 64
 
+#define MQTT_DEFAULT_TOPIC_PREFIX BRAND_NAME // Проверка: mosquitto_sub -h test.mosquitto.org -t "waterius/#" -v
+#define MQTT_DEFAULT_PORT 1883
+
+#ifndef DISCOVERY_TOPIC
+#define DISCOVERY_TOPIC "homeassistant"
+#endif
+
+#ifndef MQTT_AUTO_DISCOVERY
+#define MQTT_AUTO_DISCOVERY true // если true то публикуется автодискавери топик для Home Assistant
+#endif
+
+#define MQTT_FORCE_UPDATE true // Сенсор в HA будет обновляться даже если значение не обновилось
+
+#define CHANNEL_NUM 2
+
+#define HARDWARE_VERSION "1.0.0"
+#define MANUFACTURER "Waterius"
+
+#define JSON_DYNAMIC_MSG_BUFFER 2048
+#define JSON_SMALL_STATIC_MSG_BUFFER 256
+
+#define ROUTER_MAC_LENGTH 8
+#define MAC_LENGTH 18
+#define IP_LENGTH 16
+
 #define SERIAL_LEN 16
 
+#ifndef DEFAULT_WAKEUP_PERIOD_MIN
 #define DEFAULT_WAKEUP_PERIOD_MIN 1440
+#endif
 
-#define AUTO_IMPULSE_FACTOR 2
+#define AUTO_IMPULSE_FACTOR 3
 #define AS_COLD_CHANNEL 7
 
-struct CalculatedData
+#define DEF_FALLBACK_DNS "8.8.8.8"
+
+#define WIFI_CONNECT_ATTEMPTS 2
+
+#define WIFI_SSID_LEN 32 + 1
+#define WIFI_PWD_LEN 64 + 1
+
+#define DEFAULT_GATEWAY "192.168.0.1"
+#define DEFAULT_MASK "255.255.255.0"
+#define DEFAULT_NTP_SERVER "ru.pool.ntp.org"
+
+#ifndef LED_PIN 
+#define LED_PIN 1    
+#endif
+
+// attiny85
+#define SETUP_MODE 1
+#define TRANSMIT_MODE 2
+#define MANUAL_TRANSMIT_MODE 3
+
+// model
+#define WATERIUS_CLASSIC 0
+#define WATERIUS_4C2W 1
+
+enum CounterType
 {
-    float channel0;
-    float channel1;
+    NAMUR=0,
+    DISCRETE=1,
+    ELECTRONIC=2
+};
 
-    uint32_t delta0;
-    uint32_t delta1;
+enum CounterName
+{
+    WATER_COLD=0,
+    WATER_HOT=1,
+    ELECTRO=2,
+    GAS=3,
+    HEAT=4,
+    PORTABLE_WATER=5,
+    OTHER=6
+};
 
-    uint16_t voltage;
-    uint16_t voltage_diff;
-    bool low_voltage;
-    int8_t rssi;
-    uint8_t channel;
-    uint32_t router_mac;
+// согласно 
+enum DataType
+{
+    COLD_WATER = 0,
+    HOT_WATER = 1,
+    ELECTRICITY = 2,
+    GAS_DATA = 3,
+    HEATING = 4,
+    ELECTRICITY_DAY = 5,
+    ELECTRICITY_NIGHT = 6,
+    ELECTRICITY_PEAK = 7,
+    ELECTRICITY_HALF_PEAK = 8,
+    POTABLE_WATER = 9,
+    OTHER_TYPE = 10
 };
 
 struct HeatCounterData{
@@ -161,120 +305,145 @@ struct HeatCounterData{
     retval_float_t t_Output;// температура на выходе
 };
 
+
+struct CalculatedData
+{
+    // Показания в кубометрах
+    float channel0 = 0.0;
+    // Показания в кубометрах
+    float channel1 = 0.0;
+
+    uint32_t delta0 = 0;
+    uint32_t delta1 = 0;
+};
+
 /*
 Настройки хранящиеся EEPROM
 */
 struct Settings
 {
-    uint8_t version; //Версия конфигурации
+    uint8_t version = CURRENT_VERSION; // Версия конфигурации
 
-    uint8_t reserved;
+    uint8_t reserved = 0;
 
     // SEND_WATERIUS
 
     // http/https сервер для отправки данных в виде JSON
-    //вид: http://host[:port][/path]
+    // вид: http://host[:port][/path]
     //      https://host[:port][/path]
-    char waterius_host[WATERIUS_HOST_LEN];
-    char waterius_key[WATERIUS_KEY_LEN];
-    char waterius_email[EMAIL_LEN];
+    char waterius_host[HOST_LEN] = {0};
+    char waterius_key[WATERIUS_KEY_LEN] = {0};
+    char waterius_email[EMAIL_LEN] = {0};
 
     // SEND_BLYNK
+    // уникальный ключ устройства blynk
+    char blynk_key[BLYNK_KEY_LEN] = {0};
+    // сервер blynk.com или свой blynk сервер
+    char blynk_host[HOST_LEN] = {0};
 
-    //уникальный ключ устройства blynk
-    char blynk_key[BLYNK_KEY_LEN];
-    //сервер blynk.com или свой blynk сервер
-    char blynk_host[BLYNK_HOST_LEN];
+    char reserved7[EMAIL_LEN + BLYNK_EMAIL_TITLE_LEN + BLYNK_EMAIL_TEMPLATE_LEN] = {0};
 
-    //Если email не пустой, то отсылается e-mail
-    //Чтобы работало нужен виджет эл. почта в приложении
-    char blynk_email[EMAIL_LEN];
-    //Заголовок письма. {V0}-{V4} заменяются на данные
-    char blynk_email_title[BLYNK_EMAIL_TITLE_LEN];
-    //Шаблон эл. письма. {V0}-{V4} заменяются на данные
-    char blynk_email_template[BLYNK_EMAIL_TEMPLATE_LEN];
-
-    char mqtt_host[MQTT_HOST_LEN];
-    uint16_t mqtt_port;
-    char mqtt_login[MQTT_LOGIN_LEN];
-    char mqtt_password[MQTT_PASSWORD_LEN];
-    char mqtt_topic[MQTT_TOPIC_LEN];
+    char mqtt_host[HOST_LEN] = {0};
+    uint16_t mqtt_port = MQTT_DEFAULT_PORT;
+    char mqtt_login[MQTT_LOGIN_LEN] = {0};
+    char mqtt_password[MQTT_PASSWORD_LEN] = {0};
+    char mqtt_topic[MQTT_TOPIC_LEN] = {0};
 
     /*
     Показания счетчиках в кубометрах,
     введенные пользователем при настройке
     */
-    float channel0_start;
-    float channel1_start;
+    float channel0_start = 0.0;
+    float channel1_start = 0.0;
 
     /*
-    Кол-во литров на 1 импульс
+    reserved
     */
-    uint8_t factor0;
-    uint8_t factor1;
+    uint8_t reserved5 = 0;
+    uint8_t reserved6 = 0;
 
     /*
     Серийные номера счётчиков воды
     */
-    char serial0[SERIAL_LEN];
-    char serial1[SERIAL_LEN];
+    char serial0[SERIAL_LEN] = {0};
+    char serial1[SERIAL_LEN] = {0};
 
     /*
     Кол-во импульсов Attiny85 соответствующие показаниям счетчиков,
     введенных пользователем при настройке
     */
-    uint32_t impulses0_start;
-    uint32_t impulses1_start;
+    uint32_t impulses0_start = 0;
+    uint32_t impulses1_start = 0;
 
     /*
     Не понятно, как получить от Blynk прирост показаний,
     поэтому сохраним их в памяти каждое включение
     */
-    uint32_t impulses0_previous;
-    uint32_t impulses1_previous;
+    uint32_t impulses0_previous = 0;
+    uint32_t impulses1_previous = 0;
 
     /*
     Время последнего пробуждения
     */
-    uint32_t wake_time;
+    uint32_t wake_time = 0;
 
     /*
     За сколько времени настроили ватериус
     */
-    uint32_t setup_time;
+    uint32_t setup_time = 0;
 
     /*
     Статический адрес
     */
-    uint32_t ip;
-    uint32_t gateway;
-    uint32_t mask;
+    uint32_t ip = 0;
+    uint32_t gateway = 0;
+    uint32_t mask = 0;
 
     /*
     Период пробуждение для отправки данных, мин
     */
-    uint16_t wakeup_per_min;
+    uint16_t wakeup_per_min = DEFAULT_WAKEUP_PERIOD_MIN;
 
     /*
     Установленный период отправки с учетом погрешности
     */
-    uint16_t set_wakeup;
+    uint16_t set_wakeup = DEFAULT_WAKEUP_PERIOD_MIN;
 
     /*
     Время последней отправки по расписанию
     */
-    time_t last_send; // Size of time_t: 8
+    time_t last_send = 0; // Size of time_t: 8
 
     /*
     Режим пробуждения
     */
-    uint8_t mode;
+    uint8_t mode = SETUP_MODE; // SETUP_MODE
 
     /*
     Успешная настройка
     */
-    uint8_t setup_finished_counter;
+    uint8_t setup_finished_counter = 0;
 
+    /* Публиковать данные для автоматического добавления в Homeassistant */
+    uint8_t mqtt_auto_discovery = MQTT_AUTO_DISCOVERY;
+    uint8_t reserved2 = 0;
+
+    /* Топик MQTT*/
+    char mqtt_discovery_topic[MQTT_TOPIC_LEN] = DISCOVERY_TOPIC;
+
+    /* пользовательский NTP сервер */
+    char ntp_server[HOST_LEN] = {0};
+
+    /* имя сети Wifi */
+    char wifi_ssid[WIFI_SSID_LEN] = {0};
+    /* пароль к Wifi сети */
+    char wifi_password[WIFI_PWD_LEN] = {0};
+    /* mac сети Wifi */
+    uint8_t wifi_bssid[6] = {0};
+    /* Wifi канал */
+    uint8_t wifi_channel = 0;
+    uint8_t wifi_phy_mode = 0; // Режим работы интерфейса
+    
     /*
     Адрес счетчика тепла. В формате BCD
     например: на счетчике указан номер "702315", в массиве будет {0x00, 0x70, 0x23, 0x15}
@@ -283,13 +452,22 @@ struct Settings
     /*
     Зарезервируем кучу места, чтобы не писать конвертер конфигураций.
     Будет актуально для On-the-Air обновлений
+    Тип счётчика (вода, тепло, газ, электричество)
     */
-    uint8_t reserved2[154];
+    uint8_t counter0_name = CounterName::WATER_HOT;  //enum CounterName
+    uint8_t counter1_name = CounterName::WATER_COLD;
 
     /*
-    Контрольная сумма, чтобы гарантировать корректность чтения настроек
+    Кол-во литров на 1 импульс
     */
-    uint16_t crc;
-}; //980 байт
+    uint16_t factor0 = AS_COLD_CHANNEL;
+    uint16_t factor1 = AUTO_IMPULSE_FACTOR;
+    /*
+    Зарезервируем кучу места, чтобы не писать конвертер конфигураций.
+    Будет актуально для On-the-Air обновлений
+    */
+    uint8_t reserved4[60] = {0};
+
+}; // 960 байт
 
 #endif

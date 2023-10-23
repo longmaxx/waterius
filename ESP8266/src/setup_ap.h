@@ -84,20 +84,23 @@ public:
     }
 };
 
+// TODO: default_value перенести в конструктор и локальную переменную. чтобы убрать аргумент в add_option
 class DropdownParameter : public WiFiManagerParameter
 {
 public:
     String options;
-    DropdownParameter(const char *id)
-        : WiFiManagerParameter(id, "", true, String(0).c_str(), 10)
+    int _default_value;
+    DropdownParameter(const char *id, const char *label, const int default_value)
+        : WiFiManagerParameter(id, label, String(0).c_str())
+        , _default_value(default_value)
     {
         options.reserve(200);
     }
 
-    void add_option(const int value, const char *title, const int default_value)
+    void add_option(const int value, const char *title)
     {
         options += "<option ";
-        if (value == default_value)
+        if (value == _default_value)
         {
             options += "selected ";
         }
@@ -126,5 +129,26 @@ public:
         init(id, label, defaultValue, length, " type=\"email\" pattern=\"[^@\\s]+@[^@\\s]+\\.[^@\\s]+\"", WFM_LABEL_BEFORE);
     }
 };
+
+class CheckBoxParameter : public WiFiManagerParameter
+{
+public:
+    CheckBoxParameter(const char *id, bool default_value)
+        : WiFiManagerParameter("")
+    {
+        if (default_value) {
+            init(id, "", "T", 2, " type=\"checkbox\" checked", WFM_NO_LABEL);
+        } else {
+            init(id, "", "T", 2, " type=\"checkbox\"", WFM_NO_LABEL);
+        }
+
+    }
+
+    bool getValue()
+    {
+        return strncmp(WiFiManagerParameter::getValue(), "T", 1) == 0;
+    }
+};
+
 
 #endif
