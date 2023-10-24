@@ -123,7 +123,7 @@ bool send_mqtt(Settings &sett, const SlaveData &data, const CalculatedData &cdat
 
 bool send_mqtt_hc(const Settings &sett, const SlaveData &data, const HeatCounterData &hcdata)
 {
-    if (strnlen(sett.mqtt_host, MQTT_HOST_LEN) == 0) {
+    if (strnlen(sett.mqtt_host, HOST_LEN) == 0) {
         LOG_INFO(F("MQTT: SKIP"));
         return false;
     }
@@ -132,7 +132,7 @@ bool send_mqtt_hc(const Settings &sett, const SlaveData &data, const HeatCounter
     PubSubClient client(wclient);
     client.setServer(sett.mqtt_host, sett.mqtt_port);
 
-    String clientId = "waterius-" + String(ESP.getChipId());
+    String clientId = "waterius-" + String(getChipId());
 
     const char *login = strnlen(sett.mqtt_login, MQTT_LOGIN_LEN) ? sett.mqtt_login : NULL;
     const char *pass = strnlen(sett.mqtt_password, MQTT_PASSWORD_LEN) ? sett.mqtt_password : NULL;
@@ -156,4 +156,5 @@ bool send_mqtt_hc(const Settings &sett, const SlaveData &data, const HeatCounter
     return false;
 }   
 
+#endif
 #endif

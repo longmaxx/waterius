@@ -181,9 +181,6 @@
 
 #define HEAT_DCDC_EN_PIN (12) // пин включения преобразователя 9V и конвертера RS-485
 
-
-#define ESP_CONNECT_TIMEOUT 15000UL // Время подключения к точке доступа, ms
-
 #define SERVER_TIMEOUT 12000UL // Время ответа сервера, ms
 
 #define I2C_SLAVE_ADDR 10 // i2c адрес Attiny85

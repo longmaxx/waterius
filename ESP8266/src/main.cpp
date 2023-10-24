@@ -22,11 +22,10 @@
 MasterI2C masterI2C;  // Для общения с Attiny85 по i2c
 SlaveData data;       // Данные от Attiny85
 Settings sett;        // Настройки соединения и предыдущие показания из EEPROM
-CalculatedData cdata; //вычисляемые данные
+CalculatedData cdata; // вычисляемые данные
 HeatCounterData hcdata;// данные со счетчика тепла
 SoftwareSerial SSerial(HEAT_COUNTER_PORT_RX, HEAT_COUNTER_PORT_TX);
 PulsarTHeatCounter hc;
-Voltage voltage;      // клас монитора питания
 ADC_MODE(ADC_VCC);
 Ticker voltage_ticker;
 
@@ -35,13 +34,9 @@ Ticker voltage_ticker;
 */
 void setup()
 {
+    LOG_BEGIN(115200); // Включаем логгирование на пине TX, 115200 8N1
     pinMode(HEAT_DCDC_EN_PIN, OUTPUT);
     digitalWrite( HEAT_DCDC_EN_PIN, LOW);
-
-    memset(&cdata, 0, sizeof(cdata));
-    memset(&data, 0, sizeof(data));
-    memset(&hcdata, 0, sizeof(hcdata));
-    LOG_BEGIN(115200); //Включаем логгирование на пине TX, 115200 8N1
     LOG_INFO(F("Booted"));
 
     masterI2C.begin(); // Включаем i2c master
@@ -49,13 +44,10 @@ void setup()
     get_voltage()->begin();
     voltage_ticker.attach_ms(300, []()
                              { get_voltage()->update(); }); // через каждые 300 мс будет измеряться напряжение
-    masterI2C.begin(); //Включаем i2c master
-    
     // Настраиваем работу со счетчиком тепла
     SSerial.begin(9600);
     SSerial.write("KUKU");
     hc.begin(&SSerial, sett.hc_address);
-    voltage.begin();
     digitalWrite( HEAT_DCDC_EN_PIN, HIGH);
     delay(5000);
     digitalWrite( HEAT_DCDC_EN_PIN, LOW);
@@ -92,7 +84,7 @@ void getHeatCounterData (HeatCounterData* hdata)
 }
 void loop()
 {
-    uint8_t mode =  TRANSMIT_MODE;
+    uint8_t mode = SETUP_MODE; // TRANSMIT_MODE;
     bool config_loaded = false;
 
     // спрашиваем у Attiny85 повод пробуждения и данные true) // /
@@ -106,7 +98,7 @@ void loop()
 
         // Вычисляем текущие показания
         calculate_values(sett, data, cdata);
-        
+
         if (mode == SETUP_MODE)
         {
             LOG_INFO(F("Entering in setup mode..."));
@@ -164,9 +156,6 @@ void loop()
                 delay(2000);
                 getHeatCounterData(&hcdata);
                 digitalWrite( HEAT_DCDC_EN_PIN, LOW);
-                
-                print_wifi_mode();
-                LOG_INFO(F("Connected, IP: ") << WiFi.localIP().toString());
 
                 LOG_INFO(F("Free memory: ") << ESP.getFreeHeap());
 
@@ -188,25 +177,14 @@ void loop()
 
 #ifndef MQTT_DISABLED
                 if (is_mqtt(sett))
-                if (send_mqtt_hc(sett, data, hcdata)) {
-                    LOG_INFO(F("Send HC OK"));
-                }
-
-                UserClass::sendNewData(sett, data, cdata, hcdata);
-
-                //Сохраним текущие значения в памяти.
-                sett.impulses0_previous = data.impulses0;
-                sett.impulses1_previous = data.impulses1;
-
-                //Перешлем время на сервер при след. включении
-                sett.wake_time = millis();
-
-                //Перерасчет времени пробуждения
-                if (mode == TRANSMIT_MODE)
                 {
                     if (send_mqtt(sett, data, cdata, json_data))
                     {
                         LOG_INFO(F("MQTT: Send OK"));
+                    }
+
+                    if (send_mqtt_hc(sett, data, hcdata)) {
+                        LOG_INFO(F("Send HC OK"));
                     }
                 }
                 else
