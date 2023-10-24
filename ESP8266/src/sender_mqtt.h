@@ -121,40 +121,40 @@ bool send_mqtt(Settings &sett, const SlaveData &data, const CalculatedData &cdat
     return true;
 }
 
-bool send_mqtt_hc(const Settings &sett, const SlaveData &data, const HeatCounterData &hcdata)
-{
-    if (strnlen(sett.mqtt_host, HOST_LEN) == 0) {
-        LOG_INFO(F("MQTT: SKIP"));
-        return false;
-    }
+// bool send_mqtt_hc(const Settings &sett, const SlaveData &data, const HeatCounterData &hcdata)
+// {
+//     if (strnlen(sett.mqtt_host, HOST_LEN) == 0) {
+//         LOG_INFO(F("MQTT: SKIP"));
+//         return false;
+//     }
 
-    WiFiClient wclient;   
-    PubSubClient client(wclient);
-    client.setServer(sett.mqtt_host, sett.mqtt_port);
+//     WiFiClient wclient;   
+//     PubSubClient client(wclient);
+//     client.setServer(sett.mqtt_host, sett.mqtt_port);
 
-    String clientId = "waterius-" + String(getChipId());
+//     String clientId = "waterius-" + String(getChipId());
 
-    const char *login = strnlen(sett.mqtt_login, MQTT_LOGIN_LEN) ? sett.mqtt_login : NULL;
-    const char *pass = strnlen(sett.mqtt_password, MQTT_PASSWORD_LEN) ? sett.mqtt_password : NULL;
+//     const char *login = strnlen(sett.mqtt_login, MQTT_LOGIN_LEN) ? sett.mqtt_login : NULL;
+//     const char *pass = strnlen(sett.mqtt_password, MQTT_PASSWORD_LEN) ? sett.mqtt_password : NULL;
     
-    String topic(sett.mqtt_topic);
-    if (!topic.endsWith("/"))
-        topic += '/';
-    topic += "HC/";
+//     String topic(sett.mqtt_topic);
+//     if (!topic.endsWith("/"))
+//         topic += '/';
+//     topic += "HC/";
 
-    if (client.connect(clientId.c_str(), login, pass)) {
-        client.publish((topic + "lastError").c_str(), String((int)hcdata.errorCode,8).c_str(), true);
-        client.publish((topic + "power").c_str(), String((float)hcdata.power,8).c_str(), true);
-        client.publish((topic + "T_IN").c_str(), String((float)hcdata.t_Input,8).c_str(), true);
-        client.publish((topic + "T_OUT").c_str(), String((float)hcdata.t_Output,8).c_str(), true);
-        client.disconnect();
-        return true;
-    }  else {
-        LOG_ERROR(F("MQTT connect error"));
-    } 
+//     if (client.connect(clientId.c_str(), login, pass)) {
+//         client.publish((topic + "lastError").c_str(), String((int)hcdata.errorCode,8).c_str(), true);
+//         client.publish((topic + "power").c_str(), String((float)hcdata.power,8).c_str(), true);
+//         client.publish((topic + "T_IN").c_str(), String((float)hcdata.t_Input,8).c_str(), true);
+//         client.publish((topic + "T_OUT").c_str(), String((float)hcdata.t_Output,8).c_str(), true);
+//         client.disconnect();
+//         return true;
+//     }  else {
+//         LOG_ERROR(F("MQTT connect error"));
+//     } 
 
-    return false;
-}   
+//     return false;
+// }   
 
 #endif
 #endif
