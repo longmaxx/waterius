@@ -22126,7 +22126,6 @@ wave soldering</description>
 <part name="R16" library="rcl" deviceset="R-EU_" device="R0805" value="3k3">
 <attribute name="OM" value="3k6"/>
 </part>
-<part name="+3V6" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="+3V3" device=""/>
 <part name="JP7" library="pinhead" library_urn="urn:adsk.eagle:library:325" deviceset="PINHD-1X2" device="" package3d_urn="urn:adsk.eagle:package:22435/2" value="DC_StepUp_Power"/>
 <part name="JP8" library="pinhead" library_urn="urn:adsk.eagle:library:325" deviceset="PINHD-1X2" device="" package3d_urn="urn:adsk.eagle:package:22435/2" value="DC_IN_9V"/>
 <part name="U1" library="RS485Module" deviceset="RS-485-MODULE" device=""/>
@@ -22157,11 +22156,11 @@ wave soldering</description>
 </instance>
 <instance part="+3V3" gate="G$1" x="53.848" y="69.088" smashed="yes"/>
 <instance part="+3V4" gate="G$1" x="48.514" y="69.088" smashed="yes"/>
-<instance part="R4" gate="G$1" x="61.722" y="26.924" smashed="yes" rot="R270">
-<attribute name="VALUE" x="62.484" y="22.098" size="1.778" layer="96"/>
+<instance part="R4" gate="G$1" x="61.722" y="24.384" smashed="yes" rot="R270">
+<attribute name="VALUE" x="62.484" y="19.558" size="1.778" layer="96"/>
 </instance>
-<instance part="LED1" gate="G$1" x="61.722" y="39.116" smashed="yes">
-<attribute name="VALUE" x="62.103" y="35.052" size="1.778" layer="96" rot="R180"/>
+<instance part="LED1" gate="G$1" x="61.722" y="36.576" smashed="yes">
+<attribute name="VALUE" x="62.103" y="32.512" size="1.778" layer="96" rot="R180"/>
 </instance>
 <instance part="+3V8" gate="G$1" x="-9.906" y="76.2" smashed="yes">
 <attribute name="VALUE" x="-9.906" y="78.74" size="1.778" layer="96" rot="R180"/>
@@ -22294,9 +22293,6 @@ wave soldering</description>
 <attribute name="NAME" x="-20.828" y="95.2246" size="1.778" layer="95" rot="R90"/>
 <attribute name="VALUE" x="-23.622" y="94.996" size="1.778" layer="96" rot="R90"/>
 </instance>
-<instance part="+3V6" gate="G$1" x="-5.334" y="119.888" smashed="yes">
-<attribute name="VALUE" x="-7.874" y="117.348" size="1.778" layer="96" rot="R180"/>
-</instance>
 <instance part="JP7" gate="G$1" x="-61.214" y="67.31" smashed="yes">
 <attribute name="NAME" x="-67.564" y="73.025" size="1.778" layer="95"/>
 <attribute name="VALUE" x="-67.564" y="62.23" size="1.778" layer="96"/>
@@ -22368,7 +22364,7 @@ wave soldering</description>
 </segment>
 <segment>
 <pinref part="R4" gate="G$1" pin="2"/>
-<wire x1="61.722" y1="21.844" x2="61.722" y2="18.542" width="0.1524" layer="91"/>
+<wire x1="61.722" y1="19.304" x2="61.722" y2="18.542" width="0.1524" layer="91"/>
 <pinref part="GND3" gate="1" pin="GND"/>
 </segment>
 <segment>
@@ -22405,15 +22401,15 @@ wave soldering</description>
 <junction x="39.37" y="23.114"/>
 </segment>
 <segment>
-<pinref part="JP5" gate="A" pin="3"/>
-<wire x1="75.438" y1="65.278" x2="75.438" y2="66.04" width="0.1524" layer="91"/>
 <pinref part="GND8" gate="1" pin="GND"/>
-<wire x1="75.692" y1="58.928" x2="75.692" y2="66.04" width="0.1524" layer="91"/>
-<wire x1="75.692" y1="66.04" x2="75.438" y2="66.04" width="0.1524" layer="91"/>
-<junction x="75.438" y="66.04"/>
 <pinref part="JP2" gate="G$1" pin="2"/>
 <wire x1="75.692" y1="58.928" x2="90.678" y2="58.928" width="0.1524" layer="91"/>
 <wire x1="90.678" y1="58.928" x2="90.678" y2="66.548" width="0.1524" layer="91"/>
+<pinref part="JP5" gate="A" pin="3"/>
+<wire x1="75.438" y1="65.278" x2="75.438" y2="66.04" width="0.1524" layer="91"/>
+<wire x1="75.438" y1="66.04" x2="75.438" y2="58.928" width="0.1524" layer="91"/>
+<wire x1="75.438" y1="58.928" x2="75.692" y2="58.928" width="0.1524" layer="91"/>
+<junction x="75.438" y="66.04"/>
 <junction x="75.692" y="58.928"/>
 </segment>
 <segment>
@@ -22505,16 +22501,6 @@ wave soldering</description>
 <pinref part="JP6" gate="A" pin="2"/>
 <wire x1="169.164" y1="86.36" x2="184.912" y2="86.36" width="0.1524" layer="91"/>
 <label x="176.53" y="87.376" size="1.778" layer="95"/>
-</segment>
-<segment>
-<pinref part="Q2" gate="G$1" pin="E"/>
-<wire x1="-5.334" y1="105.664" x2="-5.334" y2="113.284" width="0.1524" layer="91"/>
-<pinref part="R15" gate="G$1" pin="1"/>
-<wire x1="-5.334" y1="113.284" x2="-5.334" y2="115.316" width="0.1524" layer="91"/>
-<wire x1="-13.97" y1="113.284" x2="-5.334" y2="113.284" width="0.1524" layer="91"/>
-<junction x="-5.334" y="113.284"/>
-<pinref part="+3V6" gate="G$1" pin="+3V3"/>
-<wire x1="-5.334" y1="117.348" x2="-5.334" y2="113.284" width="0.1524" layer="91"/>
 </segment>
 </net>
 <net name="AVR_RST" class="0">
@@ -22639,6 +22625,15 @@ wave soldering</description>
 <junction x="-38.354" y="113.03"/>
 <label x="-41.402" y="115.57" size="1.778" layer="95"/>
 </segment>
+<segment>
+<pinref part="Q2" gate="G$1" pin="E"/>
+<wire x1="-5.334" y1="105.664" x2="-5.334" y2="113.284" width="0.1524" layer="91"/>
+<pinref part="R15" gate="G$1" pin="1"/>
+<wire x1="-5.334" y1="113.284" x2="-5.334" y2="115.316" width="0.1524" layer="91"/>
+<wire x1="-13.97" y1="113.284" x2="-5.334" y2="113.284" width="0.1524" layer="91"/>
+<junction x="-5.334" y="113.284"/>
+<label x="-5.08" y="114.3" size="1.778" layer="95"/>
+</segment>
 </net>
 <net name="N$3" class="0">
 <segment>
@@ -22653,7 +22648,7 @@ wave soldering</description>
 <segment>
 <pinref part="LED1" gate="G$1" pin="A"/>
 <pinref part="U$3" gate="G$1" pin="TX"/>
-<wire x1="61.722" y1="50.292" x2="61.722" y2="41.656" width="0.1524" layer="91"/>
+<wire x1="61.722" y1="50.292" x2="61.722" y2="39.116" width="0.1524" layer="91"/>
 <wire x1="35.052" y1="50.292" x2="61.722" y2="50.292" width="0.1524" layer="91"/>
 <junction x="61.722" y="50.292"/>
 <pinref part="JP5" gate="A" pin="1"/>
@@ -22664,7 +22659,7 @@ wave soldering</description>
 <net name="N$6" class="0">
 <segment>
 <pinref part="LED1" gate="G$1" pin="C"/>
-<wire x1="61.722" y1="34.036" x2="61.722" y2="32.004" width="0.1524" layer="91"/>
+<wire x1="61.722" y1="31.496" x2="61.722" y2="29.464" width="0.1524" layer="91"/>
 <pinref part="R4" gate="G$1" pin="1"/>
 </segment>
 </net>
@@ -22862,13 +22857,6 @@ wave soldering</description>
 </nets>
 </sheet>
 </sheets>
-<errors>
-<approved hash="104,1,90.424,74.676,IC1,VCC,+3V3,,,"/>
-<approved hash="108,1,15.748,24.638,GND,,,,,"/>
-<approved hash="108,1,15.748,71.882,GND,,,,,"/>
-<approved hash="110,1,159.258,120.65,SDA,SCK,,,,"/>
-<approved hash="111,1,159.258,120.904,SDA,,,,,"/>
-</errors>
 </schematic>
 </drawing>
 <compatibility>
