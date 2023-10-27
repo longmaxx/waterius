@@ -22112,13 +22112,6 @@ wave soldering</description>
 <part name="GND8" library="supply1" deviceset="GND" device=""/>
 <part name="JP6" library="pinhead" library_urn="urn:adsk.eagle:library:325" deviceset="PINHD-2X5" device="" package3d_urn="urn:adsk.eagle:package:22470/2" value="AVR_PROG"/>
 <part name="JP4" library="pinhead" library_urn="urn:adsk.eagle:library:325" deviceset="PINHD-1X3" device="" package3d_urn="urn:adsk.eagle:package:22458/2" value="ESP_Mode"/>
-<part name="Q1" library="semicon-smd-ipc" library_urn="urn:adsk.eagle:library:353" deviceset="PNP-TRANSISTOR_" device="SOT23" package3d_urn="urn:adsk.eagle:package:28738/2" value="MMBTA92"/>
-<part name="R13" library="rcl" deviceset="R-EU_" device="R0805" value="10k">
-<attribute name="OM" value="3k6"/>
-</part>
-<part name="R14" library="rcl" deviceset="R-EU_" device="R0805" value="3k3">
-<attribute name="OM" value="3k6"/>
-</part>
 <part name="Q2" library="semicon-smd-ipc" library_urn="urn:adsk.eagle:library:353" deviceset="PNP-TRANSISTOR_" device="SOT23" package3d_urn="urn:adsk.eagle:package:28738/2" value="MMBTA92"/>
 <part name="R15" library="rcl" deviceset="R-EU_" device="R0805" value="10k">
 <attribute name="OM" value="3k6"/>
@@ -22268,18 +22261,6 @@ wave soldering</description>
 <instance part="JP4" gate="A" x="-15.24" y="45.212" smashed="yes">
 <attribute name="NAME" x="-20.32" y="53.975" size="1.778" layer="95"/>
 <attribute name="VALUE" x="-23.876" y="51.562" size="1.778" layer="96"/>
-</instance>
-<instance part="Q1" gate="G$1" x="-40.894" y="100.33" smashed="yes">
-<attribute name="NAME" x="-43.688" y="104.14" size="1.778" layer="95"/>
-<attribute name="VALUE" x="-51.054" y="113.03" size="1.778" layer="96"/>
-</instance>
-<instance part="R13" gate="G$1" x="-46.99" y="107.95" smashed="yes" rot="R270">
-<attribute name="NAME" x="-52.3494" y="106.172" size="1.778" layer="95"/>
-<attribute name="VALUE" x="-52.578" y="108.966" size="1.778" layer="96"/>
-</instance>
-<instance part="R14" gate="G$1" x="-55.626" y="100.33" smashed="yes">
-<attribute name="NAME" x="-53.848" y="94.9706" size="1.778" layer="95" rot="R90"/>
-<attribute name="VALUE" x="-56.642" y="94.742" size="1.778" layer="96" rot="R90"/>
 </instance>
 <instance part="Q2" gate="G$1" x="-7.874" y="100.584" smashed="yes">
 <attribute name="NAME" x="-10.668" y="104.394" size="1.778" layer="95"/>
@@ -22617,15 +22598,6 @@ wave soldering</description>
 <pinref part="U$2" gate="G$1" pin="3"/>
 </segment>
 <segment>
-<pinref part="Q1" gate="G$1" pin="E"/>
-<wire x1="-38.354" y1="105.41" x2="-38.354" y2="113.03" width="0.1524" layer="91"/>
-<pinref part="R13" gate="G$1" pin="1"/>
-<wire x1="-38.354" y1="113.03" x2="-38.354" y2="115.062" width="0.1524" layer="91"/>
-<wire x1="-46.99" y1="113.03" x2="-38.354" y2="113.03" width="0.1524" layer="91"/>
-<junction x="-38.354" y="113.03"/>
-<label x="-41.402" y="115.57" size="1.778" layer="95"/>
-</segment>
-<segment>
 <pinref part="Q2" gate="G$1" pin="E"/>
 <wire x1="-5.334" y1="105.664" x2="-5.334" y2="113.284" width="0.1524" layer="91"/>
 <pinref part="R15" gate="G$1" pin="1"/>
@@ -22719,29 +22691,6 @@ wave soldering</description>
 <wire x1="-18.288" y1="47.752" x2="-18.288" y2="58.42" width="0.1524" layer="91"/>
 </segment>
 </net>
-<net name="N$10" class="0">
-<segment>
-<pinref part="Q1" gate="G$1" pin="B"/>
-<pinref part="R14" gate="G$1" pin="2"/>
-<wire x1="-43.434" y1="100.33" x2="-46.99" y2="100.33" width="0.1524" layer="91"/>
-<pinref part="R13" gate="G$1" pin="2"/>
-<wire x1="-46.99" y1="100.33" x2="-50.546" y2="100.33" width="0.1524" layer="91"/>
-<wire x1="-46.99" y1="102.87" x2="-46.99" y2="100.33" width="0.1524" layer="91"/>
-<junction x="-46.99" y="100.33"/>
-</segment>
-</net>
-<net name="VCC_DCDC_STEPUP" class="0">
-<segment>
-<pinref part="Q1" gate="G$1" pin="C"/>
-<wire x1="-38.354" y1="95.25" x2="-38.354" y2="89.408" width="0.1524" layer="91"/>
-<label x="-47.752" y="87.376" size="1.778" layer="95"/>
-</segment>
-<segment>
-<pinref part="JP7" gate="G$1" pin="1"/>
-<wire x1="-63.754" y1="69.85" x2="-74.422" y2="69.85" width="0.1524" layer="91"/>
-<label x="-79.502" y="70.866" size="1.778" layer="95"/>
-</segment>
-</net>
 <net name="N$13" class="0">
 <segment>
 <pinref part="Q2" gate="G$1" pin="B"/>
@@ -22764,22 +22713,22 @@ wave soldering</description>
 <wire x1="-71.12" y1="27.94" x2="-78.74" y2="27.94" width="0.1524" layer="91"/>
 <label x="-88.9" y="27.94" size="1.778" layer="95"/>
 </segment>
+<segment>
+<pinref part="JP7" gate="G$1" pin="1"/>
+<wire x1="-63.754" y1="69.85" x2="-74.422" y2="69.85" width="0.1524" layer="91"/>
+<label x="-79.502" y="70.866" size="1.778" layer="95"/>
+</segment>
 </net>
 <net name="EN_HC_VCC" class="0">
-<segment>
-<pinref part="R14" gate="G$1" pin="1"/>
-<wire x1="-60.706" y1="100.33" x2="-69.342" y2="100.33" width="0.1524" layer="91"/>
-<label x="-69.342" y="101.6" size="1.778" layer="95"/>
-</segment>
-<segment>
-<pinref part="R16" gate="G$1" pin="1"/>
-<wire x1="-27.686" y1="100.584" x2="-35.306" y2="100.584" width="0.1524" layer="91"/>
-<label x="-37.338" y="102.108" size="1.778" layer="95"/>
-</segment>
 <segment>
 <pinref part="U$3" gate="G$1" pin="GPIO12"/>
 <wire x1="2.032" y1="37.592" x2="-10.668" y2="37.592" width="0.1524" layer="91"/>
 <label x="-11.43" y="38.1" size="1.778" layer="95"/>
+</segment>
+<segment>
+<pinref part="R16" gate="G$1" pin="1"/>
+<wire x1="-27.686" y1="100.584" x2="-30.48" y2="100.584" width="0.1524" layer="91"/>
+<label x="-40.64" y="101.6" size="1.778" layer="95"/>
 </segment>
 </net>
 <net name="VCC_HEAT_COUNTER" class="0">
