@@ -183,9 +183,9 @@ void loop()
                         LOG_INFO(F("MQTT: Send OK"));
                     }
 
-                    // if (send_mqtt_hc(sett, data, hcdata)) {
-                    //     LOG_INFO(F("Send HC OK"));
-                    // }
+                    if (send_mqtt_hc(sett, data, hcdata)) {
+                        LOG_INFO(F("Send HC OK"));
+                    }
                 }
                 else
                 {
