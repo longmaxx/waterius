@@ -297,7 +297,7 @@ enum DataType
 
 struct HeatCounterData{
     int errorCode;// последняя ошибка при получении данных
-    retval_float_t power;// текущее количество калорий
+    retval_float_t energy;// текущее количество калорий
     retval_float_t t_Input;// температура на входе
     retval_float_t t_Output;// температура на выходе
 };

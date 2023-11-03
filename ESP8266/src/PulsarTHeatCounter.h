@@ -50,17 +50,17 @@ typedef unsigned long retval_int_t;
 #define HEAT_CHANNEL_IMP_IN3 (12)
 #define HEAT_CHANNEL_IMP_IN4 (13)
 #define HEAT_CHANNEL_FLOW_BY_ENERGY (14)
-#define HEAT_CHANNEL_ENERGY_COOLING (21)
-#define HEAT_CHANNEL_PRESSURE1 (22)
-#define HEAT_CHANNEL_PRESSURE2 (23)
-#define HEAT_CHANNEL_MASSA (24)
-#define HEAT_CHANNEL_MASSA_COLD_TUBE_M2 (25)
-#define HEAT_CHANNEL_MASSA_OTOBRANNOI_VODI (26)
-#define HEAT_CHANNEL_VOLUME_COLD_WATER (27)
-#define HEAT_CHANNEL_ENERGY_USED_WATER (28)
+// #define HEAT_CHANNEL_ENERGY_COOLING (21)
+// #define HEAT_CHANNEL_PRESSURE1 (22)
+// #define HEAT_CHANNEL_PRESSURE2 (23)
+// #define HEAT_CHANNEL_MASSA (24)
+// #define HEAT_CHANNEL_MASSA_COLD_TUBE_M2 (25)
+// #define HEAT_CHANNEL_MASSA_OTOBRANNOI_VODI (26)
+// #define HEAT_CHANNEL_VOLUME_COLD_WATER (27)
+// #define HEAT_CHANNEL_ENERGY_USED_WATER (28)
 
-// бит канала чтения данных (результат unsigned int32)
-#define HEAT_CHANNEL_NORMAL_WORK_TIME (20) /*uint32*/
+// // бит канала чтения данных (результат unsigned int32)
+// #define HEAT_CHANNEL_NORMAL_WORK_TIME (20) /*uint32*/
 
 
 #define PULSAR_DBG

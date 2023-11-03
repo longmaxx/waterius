@@ -55,32 +55,50 @@ void setup()
 
 void getHeatCounterValueF (int channel, retval_float_t* value, int* errCode)
 {
-    int res = hc.readActualValueF(HEAT_CHANNEL_POWER, &hcdata.power);
-    if ((hcdata.errorCode == ERR_SUCCESS) && (res != ERR_SUCCESS))
-        hcdata.errorCode = res;
+    int res = hc.readActualValueF(channel, value);
+    if ((errCode == ERR_SUCCESS) && (res != ERR_SUCCESS))
+        *errCode = res;
 }
 
 void getHeatCounterData (HeatCounterData* hdata)
 {
     LOG_INFO(F("Start getting heat counter data."));
-    getHeatCounterValueF(HEAT_CHANNEL_POWER, &(hdata->power), &(hdata->errorCode));
+    getHeatCounterValueF(HEAT_CHANNEL_ENERGY, &(hdata->energy), &(hdata->errorCode));
     if (hdata->errorCode != ERR_SUCCESS){
      LOG_ERROR(F("Error Reading heat counter data"));   
      return;
     }
-    LOG_INFO("Heat Calories: "+ String(hdata->power));
+    LOG_INFO("Heat Calories: "+ String(hdata->energy, 8));
+
     getHeatCounterValueF(HEAT_CHANNEL_T_PODVOD, &(hdata->t_Input), &(hdata->errorCode));
     if (hdata->errorCode != ERR_SUCCESS){
      LOG_ERROR(F("Error Reading heat counter data"));   
      return;
     }
     LOG_INFO("Heat T_Input: "+ String(hdata->t_Input));
+
     getHeatCounterValueF(HEAT_CHANNEL_T_OBRATKA, &(hdata->t_Output), &(hdata->errorCode));
     if (hdata->errorCode != ERR_SUCCESS){
      LOG_ERROR(F("Error Reading heat counter data"));   
      return;
     }
     LOG_INFO("Heat T_Output: "+ String(hdata->t_Output));
+
+    retval_float_t flow;
+    getHeatCounterValueF(HEAT_CHANNEL_T_PEREPAD, &flow, &(hdata->errorCode));
+    if (hdata->errorCode != ERR_SUCCESS){
+     LOG_ERROR(F("Error Reading heat counter data"));   
+     return;
+    }
+    LOG_INFO("Heat Perepad: "+ String(flow,8));
+
+    retval_float_t flow2;
+    getHeatCounterValueF(HEAT_CHANNEL_FLOW, &flow2, &(hdata->errorCode));
+    if (hdata->errorCode != ERR_SUCCESS){
+     LOG_ERROR(F("Error Reading heat counter data"));   
+     return;
+    }
+    LOG_INFO("Heat Flow: "+ String(flow2,8));
 }
 void loop()
 {

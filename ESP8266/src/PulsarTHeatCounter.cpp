@@ -196,7 +196,7 @@ void PulsarTHeatCounter::sendCommand_ReadData(uint8_t code, uint8_t channel)
     writeBuffer(len);
     // data; make channel mask
     //fill data
-    uint32_t data = 0x01<<channel;
+    uint32_t data = 0x01<<(channel-1);// channel is 1-based
     writeBuffer(((char*)&data), 4);
     //fill ID
     writeBuffer(0xFA);
