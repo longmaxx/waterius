@@ -57,6 +57,12 @@ retval_float_t PulsarTHeatCounter::readResponseF(uint8_t channel)
         return valData;
     }
     LOG(F("readResponse: Error reading response.\n"))
+    #ifdef PULSAR_DBG
+                LOG(F("Received buffer: <<"))
+                for (int a=0;a<iBuff;a++)
+                    LOGF("%8X ",buff[a])
+                LOG(F(">>\n"))
+            #endif
     setError(iParsed);
     return -1;// some errors occured
 }
