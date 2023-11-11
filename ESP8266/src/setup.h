@@ -300,6 +300,7 @@ struct HeatCounterData{
     retval_float_t energy;// текущее количество калорий
     retval_float_t t_Input;// температура на входе
     retval_float_t t_Output;// температура на выходе
+    retval_float_t flow;// поток м3/ч
 };
 
 

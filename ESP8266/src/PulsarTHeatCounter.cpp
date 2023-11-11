@@ -8,6 +8,18 @@ int PulsarTHeatCounter::readActualValueF(uint8_t channel, retval_float_t* retVal
     return flag_Error;
 }
 
+void PulsarTHeatCounter::readAllBytes(){
+    while (port->available())// read all available bytes
+    {
+        buff[iBuff++] = (char)port->read();
+        if (iBuff>HEAT_BUF_LENGTH)
+        {
+            LOG("ERROR: Read buffer overflow.");
+            iBuff = 0;
+        } 
+    };
+}
+
 retval_float_t PulsarTHeatCounter::readResponseF(uint8_t channel)
 {
     LOG(F("readResponse:Begin.\n"))
@@ -16,21 +28,13 @@ retval_float_t PulsarTHeatCounter::readResponseF(uint8_t channel)
     int iParsed = ERR_PACKET_PARSE_NO_END;
     while (millis() < stopTime)// читаем порт пока не прошел таймаут
     {
-        while (port->available())// read all available bytes
-        {
-           buff[iBuff++] = (char)port->read();
-           if (iBuff>HEAT_BUF_LENGTH)
-           {
-               LOG("Read buffer overflow.");
-               iBuff = 0;
-           } 
-        };
+        readAllBytes();
         // если байты закончились - пробуем парсить пакет.
        
         iParsed = parsePacket(channel);
         if ((iParsed == ERR_PACKET_PARSE_FAILED) || (iParsed>=0))
         {
-            LOG(F("readResponse:Exit receive packet cycle.\n"))
+            LOG(F("ERROR: readResponse:Exit receive packet cycle.\n"))
             #ifdef PULSAR_DBG
                 LOG(F("Received buffer: <<"))
                 for (int a=0;a<iBuff;a++)
@@ -42,11 +46,10 @@ retval_float_t PulsarTHeatCounter::readResponseF(uint8_t channel)
     }
     if (millis() >= stopTime)
     {
-        LOG(F("Heat counter read timeout."))
+        LOG(F("ERROR: Heat counter read timeout."))
         LOGF("Bytes count: %i\n", iBuff);
         iParsed = ERR_PACKET_PARSE_FAILED;
     }
-
     
     if (iParsed >= 0)//packet parsed OK
     {
@@ -56,7 +59,7 @@ retval_float_t PulsarTHeatCounter::readResponseF(uint8_t channel)
         memcpy(&valData,&buff[PACKET_I_DATA_START],sizeof valData);
         return valData;
     }
-    LOG(F("readResponse: Error reading response.\n"))
+    LOG(F("ERROR: readResponse: Error reading response.\n"))
     #ifdef PULSAR_DBG
                 LOG(F("Received buffer: <<"))
                 for (int a=0;a<iBuff;a++)
@@ -64,18 +67,20 @@ retval_float_t PulsarTHeatCounter::readResponseF(uint8_t channel)
                 LOG(F(">>\n"))
             #endif
     setError(iParsed);
-    return -1;// some errors occured
+    return iParsed;// some errors occured
 }
 
+/*
+ returns:
+    success: index of last Data byte.
+    error: error code (<0)
+*/
 int PulsarTHeatCounter::parsePacket(uint8_t channel)
 {
     //wait we got length byte
     if (iBuff<=PACKET_I_PACKET_LEN)
         return ERR_PACKET_PARSE_NO_END;
     //now wait finish packet
-    //if (iBuff<buff[PACKET_I_PACKET_LEN])
-    //    return ERR_PACKET_PARSE_NO_END;
-    
     // next byte after F is packet length
     //parse packet length
     //int len = buff[PACKET_I_PACKET_LEN];
@@ -86,18 +91,19 @@ int PulsarTHeatCounter::parsePacket(uint8_t channel)
     }
     else if (iBuff > buff[PACKET_I_PACKET_LEN])
     {
-        LOG(F("parsePacket: Length (L) check failed, data too long.\n"));
+        LOG(F("ERROR: parsePacket: Length (L) check failed, data too long.\n"));
         LOGF2("Expected:%i; Actual:%i\n",(int)buff[PACKET_I_PACKET_LEN], iBuff);
         return ERR_PACKET_PARSE_OVERSIZE; 
     }
-    //parse crc
+    //if here: length is OK.
+    //try parse CRC
     uint16_t crc = 0;
     crc = buff[iBuff-1]<<8;
     crc |= buff[iBuff-2];
     uint16_t crcReceived = calcChecksum((uint8_t*)buff, buff[PACKET_I_PACKET_LEN] - 2);
     if (crc != crcReceived)
     {
-            LOG(F("parsePacket: CRC check failed.\n"));
+            LOG(F("ERROR: parsePacket: CRC check failed.\n"));
                 for (int k=0;k<16;k+=8)
                 {
                     port->write((((0x00FF<<k) & crc) >> k));
@@ -114,7 +120,7 @@ int PulsarTHeatCounter::parsePacket(uint8_t channel)
     {
         if (buff[i] != address[i])
         {
-            LOG(F("parsePacket: Address check failed.\n"))
+            LOG(F("ERROR: parsePacket: Address check failed.\n"))
             return ERR_PACKET_PARSE_ADDRESS_FAILED;
         }
     }
@@ -124,12 +130,12 @@ int PulsarTHeatCounter::parsePacket(uint8_t channel)
     {
         if (curRequestCode == HEAT_F_ERROR_COMMAND_SENT)
         {
-            LOG(F("parsePacket: Receiver error 'Incorrect command'.\n"))
+            LOG(F("ERROR: parsePacket: Receiver error 'Incorrect command'.\n"))
             return ERR_PACKET_PARSE_BAD_COMMAND;    
         }    
-        LOG(F("parsePacket: Request code (F) check failed"));
+        LOG(F("ERROR: parsePacket: Request code (F) check failed"));
         LOGF2(": %8x (expected %8x)\n", curRequestCode, requestCode);
-        return ERR_PACKET_PARSE_BAD_CODE;
+        return ERR_PACKET_PARSE_BAD_FUNC_CODE;
     }
     
     // reading data
@@ -159,7 +165,7 @@ void PulsarTHeatCounter::writeBuffer(char* data, int len)
     else
     {
         setError(ERR_BUFFER_OVERFLOW);
-        LOG(F("writeBuffer: Buffer overflow."));
+        LOG(F("ERROR: writeBuffer: Buffer overflow."));
         resetBuffer();    
     }
 }

@@ -9,7 +9,7 @@
 #include "voltage.h"
 #include "sync_time.h"
 
-void get_json_data(const Settings &sett, const SlaveData &data, const CalculatedData &cdata,  DynamicJsonDocument &json_data)
+void get_json_data(const Settings &sett, const SlaveData &data, const CalculatedData &cdata, HeatCounterData &hcdata,  DynamicJsonDocument &json_data)
 {
   Voltage *voltage = get_voltage();
   JsonObject root = json_data.to<JsonObject>();
@@ -33,6 +33,13 @@ void get_json_data(const Settings &sett, const SlaveData &data, const Calculated
   root[F("data_type0")] = (uint8_t)data_type_by_name(sett.counter0_name, 0);
   root[F("data_type1")] = (uint8_t)data_type_by_name(sett.counter1_name, 1);
 
+  //HeatCounter Pulsar
+  root[F("hc_error")] = hcdata.errorCode;
+  root[F("hc_calories")] = hcdata.energy;
+  root[F("hc_flow")] = hcdata.flow;
+  root[F("hc_t_in")] = hcdata.t_Input;
+  root[F("hc_t_out")] = hcdata.t_Output;
+  
 
   // Battery & Voltage
   root[F("voltage")] = voltage->average() / 1000.0;

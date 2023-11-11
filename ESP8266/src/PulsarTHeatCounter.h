@@ -9,7 +9,7 @@ typedef float retval_float_t;
 typedef unsigned long retval_int_t;
 #define     RETVAL_INT_SIZE (4)
 
-#define RESPONSE_READ_TIMEOUT_MS (5000)
+#define RESPONSE_READ_TIMEOUT_MS (1000)
 #define HEAT_BUF_LENGTH (50)
 #define HEAT_ADDR_LENGTH (4)
 
@@ -19,7 +19,7 @@ typedef unsigned long retval_int_t;
 // packet parse result
 #define ERR_PACKET_PARSE_OVERSIZE       (-9)
 #define ERR_PACKET_PARSE_CRC_FAILED     (-8)
-#define ERR_PACKET_PARSE_BAD_CODE       (-7)
+#define ERR_PACKET_PARSE_BAD_FUNC_CODE  (-7)
 #define ERR_PACKET_PARSE_BAD_COMMAND    (-6)
 #define ERR_PACKET_PARSE_ADDRESS_FAILED (-5)
 #define ERR_PACKET_PARSE_NO_END   (-2)
@@ -73,7 +73,7 @@ typedef unsigned long retval_int_t;
 #else    
     #define LOG(msg) {}
     #define LOGF(msg,val) {}
-    #define LOGF2(msg,val) {}
+    #define LOGF2(msg,val1, val2) {}
  #endif   
 
 
@@ -86,6 +86,9 @@ class PulsarTHeatCounter
     private: Stream* port;
     public: int flag_Error;
     
+    private: void readAllBytes();
+
+
     private: void setError(int errCode);
     private: void writeBuffer(char* data, int len);
     private: void writeBuffer(char data);
@@ -100,13 +103,6 @@ class PulsarTHeatCounter
     public: void begin(Stream* port, char* address);//9600 baud, 8N1
     public: bool isSuccess();
     public: int readActualValueF(uint8_t channel, retval_float_t* retValue);
-    //public: unsigned long readActualValueI(uint8_t channel);
-
-    //public: int ActualCalories(retval_float_t* value);// текущая величина калорий
-    //public: int ActualFlow(retval_float_t* value);// Расход воды (поток)
-    //public: retval_float_t ActualTIncoming();// Температура воды вход
-    //public: retval_float_t ActualTOutcoming();// Температура воды выход (обратка)
-    //public: retval_float_t ActualTDifference();// Температура воды разница 
 };
 
 

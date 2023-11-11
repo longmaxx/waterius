@@ -23,11 +23,12 @@ MasterI2C masterI2C;  // Для общения с Attiny85 по i2c
 SlaveData data;       // Данные от Attiny85
 Settings sett;        // Настройки соединения и предыдущие показания из EEPROM
 CalculatedData cdata; // вычисляемые данные
+ADC_MODE(ADC_VCC);
+Ticker voltage_ticker;
+
 HeatCounterData hcdata;// данные со счетчика тепла
 SoftwareSerial SSerial(HEAT_COUNTER_PORT_RX, HEAT_COUNTER_PORT_TX);
 PulsarTHeatCounter hc;
-ADC_MODE(ADC_VCC);
-Ticker voltage_ticker;
 
 /*
 Выполняется однократно при включении
@@ -35,22 +36,20 @@ Ticker voltage_ticker;
 void setup()
 {
     LOG_BEGIN(115200); // Включаем логгирование на пине TX, 115200 8N1
-    pinMode(HEAT_DCDC_EN_PIN, OUTPUT);
-    digitalWrite( HEAT_DCDC_EN_PIN, LOW);
     LOG_INFO(F("Booted"));
+    #ifndef HEAT_PULSAR_DISABLED
+        // Настраиваем работу со счетчиком тепла
+        pinMode(HEAT_DCDC_EN_PIN, OUTPUT);
+        digitalWrite( HEAT_DCDC_EN_PIN, LOW);
+        SSerial.begin(9600);
+        hc.begin(&SSerial, sett.hc_address);
+    #endif
 
     masterI2C.begin(); // Включаем i2c master
 
     get_voltage()->begin();
     voltage_ticker.attach_ms(300, []()
                              { get_voltage()->update(); }); // через каждые 300 мс будет измеряться напряжение
-    // Настраиваем работу со счетчиком тепла
-    SSerial.begin(9600);
-    SSerial.write("KUKU");
-    hc.begin(&SSerial, sett.hc_address);
-    digitalWrite( HEAT_DCDC_EN_PIN, HIGH);
-    delay(5000);
-    digitalWrite( HEAT_DCDC_EN_PIN, LOW);
 }
 
 void getHeatCounterValueF (int channel, retval_float_t* value, int* errCode)
@@ -66,39 +65,26 @@ void getHeatCounterData (HeatCounterData* hdata)
     getHeatCounterValueF(HEAT_CHANNEL_ENERGY, &(hdata->energy), &(hdata->errorCode));
     if (hdata->errorCode != ERR_SUCCESS){
      LOG_ERROR(F("Error Reading heat counter data"));   
-     return;
     }
     LOG_INFO("Heat Calories: "+ String(hdata->energy, 8));
 
+    getHeatCounterValueF(HEAT_CHANNEL_FLOW, &(hdata->flow), &(hdata->errorCode));
+    if (hdata->errorCode != ERR_SUCCESS){
+     LOG_ERROR(F("Error Reading heat counter data"));   
+    }
+    LOG_INFO("Heat Flow: "+ String(hdata->flow,8));
+    
     getHeatCounterValueF(HEAT_CHANNEL_T_PODVOD, &(hdata->t_Input), &(hdata->errorCode));
     if (hdata->errorCode != ERR_SUCCESS){
      LOG_ERROR(F("Error Reading heat counter data"));   
-     return;
     }
     LOG_INFO("Heat T_Input: "+ String(hdata->t_Input));
 
     getHeatCounterValueF(HEAT_CHANNEL_T_OBRATKA, &(hdata->t_Output), &(hdata->errorCode));
     if (hdata->errorCode != ERR_SUCCESS){
      LOG_ERROR(F("Error Reading heat counter data"));   
-     return;
     }
     LOG_INFO("Heat T_Output: "+ String(hdata->t_Output));
-
-    retval_float_t flow;
-    getHeatCounterValueF(HEAT_CHANNEL_T_PEREPAD, &flow, &(hdata->errorCode));
-    if (hdata->errorCode != ERR_SUCCESS){
-     LOG_ERROR(F("Error Reading heat counter data"));   
-     return;
-    }
-    LOG_INFO("Heat Perepad: "+ String(flow,8));
-
-    retval_float_t flow2;
-    getHeatCounterValueF(HEAT_CHANNEL_FLOW, &flow2, &(hdata->errorCode));
-    if (hdata->errorCode != ERR_SUCCESS){
-     LOG_ERROR(F("Error Reading heat counter data"));   
-     return;
-    }
-    LOG_INFO("Heat Flow: "+ String(flow2,8));
 }
 void loop()
 {
@@ -163,17 +149,21 @@ void loop()
                 {
                     sync_ntp_time(sett);
                 }
+                
+                #ifndef HEAT_PULSAR_DISABLED
+                    //Получаем данные со счетчика тепла. Т.к. проснулись для передачи.
+                    digitalWrite( HEAT_DCDC_EN_PIN, HIGH);
+                    // delay(2000);
+                    getHeatCounterData(&hcdata);
+                    digitalWrite( HEAT_DCDC_EN_PIN, LOW);
+                #endif
 
                 voltage_ticker.detach(); // перестаем обновлять перед созданием объекта с данными
                 LOG_INFO(F("Free memory: ") << ESP.getFreeHeap());
 
                 // Формироуем JSON
-                get_json_data(sett, data, cdata, json_data);
-                //Получаем данные со счетчика тепла. Т.к. проснулись для передачи.
-                digitalWrite( HEAT_DCDC_EN_PIN, HIGH);
-                delay(2000);
-                getHeatCounterData(&hcdata);
-                digitalWrite( HEAT_DCDC_EN_PIN, LOW);
+                get_json_data(sett, data, cdata, hcdata, json_data);
+                
 
                 LOG_INFO(F("Free memory: ") << ESP.getFreeHeap());
 
@@ -199,10 +189,6 @@ void loop()
                     if (send_mqtt(sett, data, cdata, json_data))
                     {
                         LOG_INFO(F("MQTT: Send OK"));
-                    }
-
-                    if (send_mqtt_hc(sett, data, hcdata)) {
-                        LOG_INFO(F("Send HC OK"));
                     }
                 }
                 else

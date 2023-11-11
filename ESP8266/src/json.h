@@ -21,10 +21,11 @@
   @param sett настройки.
   @param data показания.
   @param cdata расчитанные показатели.
+  @param hcdata показатели счетчика тепла Pulsar (RS-485).
   @param voltage мониторинг питания.
   @param json_data json документ в который будут записаны данные.
 */
-extern void get_json_data(const Settings &sett, const SlaveData &data, const CalculatedData &cdata, DynamicJsonDocument &json_data);
+extern void get_json_data(const Settings &sett, const SlaveData &data, const CalculatedData &cdata, HeatCounterData &hcdata, DynamicJsonDocument &json_data);
 
 
 #endif
