@@ -34,7 +34,7 @@ retval_float_t PulsarTHeatCounter::readResponseF(uint8_t channel)
         iParsed = parsePacket(channel);
         if ((iParsed == ERR_PACKET_PARSE_FAILED) || (iParsed>=0))
         {
-            LOG(F("ERROR: readResponse:Exit receive packet cycle.\n"))
+            LOG(F("readResponse:Exit receive packet cycle.\n"))
             #ifdef PULSAR_DBG
                 LOG(F("Received buffer: <<"))
                 for (int a=0;a<iBuff;a++)
