@@ -3,7 +3,7 @@
 #include "Logging.h"
 #include "utils.h"
 
-bool post_data(String &url, const char *key, const char *email, String &payload)
+bool post_data(const String &url, const char *key, const char *email, const String &payload)
 {
     void *pClient = nullptr;
     HTTPClient httpClient;
@@ -35,11 +35,11 @@ bool post_data(String &url, const char *key, const char *email, String &payload)
     if (httpClient.begin(*(WiFiClient *)pClient, url))
     {
         httpClient.addHeader(F("Content-Type"), F("application/json"));
-        if (key[0])
+        if (key)
         {
             httpClient.addHeader(F("Waterius-Token"), key);
         }
-        if (email[0])
+        if (email)
         {
             httpClient.addHeader(F("Waterius-Email"), email);
         }
@@ -56,12 +56,12 @@ bool post_data(String &url, const char *key, const char *email, String &payload)
 
     if (proto == PROTO_HTTP)
     {
-        delete (WiFiClient*)pClient;
+        delete (WiFiClient *)pClient;
     }
     else if (proto == PROTO_HTTPS)
     {
-        delete (WiFiClientSecure*)pClient;
+        delete (WiFiClientSecure *)pClient;
     }
-    
+
     return result;
 }
