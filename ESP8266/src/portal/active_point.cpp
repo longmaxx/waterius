@@ -90,6 +90,33 @@ String get_counter_img(const uint8_t input, const uint8_t name, const uint8_t ct
     }
 }
 
+String parse_sett_hc_pulsar_serial(char *sett, size_t size)
+{
+    char iChars[10] = {'0','1','2','3','4','5','6','7','8','9'};
+    char param_heatcounter_serial_curval[9] = {'0','1','2','3','4','5','6','7','\0'} ;
+    uint8_t i_param_heatcounter_serial_curval = 0;
+    for (uint8_t i = 0 ; i<size; i++)
+    {
+         char a = sett[i];
+         char highChar = a>>4;
+         char lowChar  = a&0b00001111;
+         if ( (highChar>= 0) && (highChar <= 9) && (lowChar>=0) && (lowChar <= 9))
+         {
+            param_heatcounter_serial_curval[i_param_heatcounter_serial_curval++] =  iChars[highChar];        
+            param_heatcounter_serial_curval[i_param_heatcounter_serial_curval++] =  iChars[lowChar];
+         }
+         else
+         {
+            LOG_ERROR (F("HeatCounter: Wrong address format . Only numbers expected!"));
+            LOG_INFO(String(highChar,HEX));
+            LOG_INFO(String(lowChar,HEX));
+         }
+        
+    }
+    param_heatcounter_serial_curval[i_param_heatcounter_serial_curval++] = '\0';        
+    return String(param_heatcounter_serial_curval);
+}
+
 String processor0(const String &var)
 {
     return processor_main(var, 0);
@@ -133,6 +160,8 @@ String processor_main(const String &var, const uint8_t input)
         return replace_value(sett.mqtt_password);
     else if (var == FPSTR(PARAM_MQTT_TOPIC))
         return replace_value(sett.mqtt_topic);
+    else if (var == FPSTR(PARAM_HC_PULSAR_SERIAL))
+        return replace_value(parse_sett_hc_pulsar_serial(sett.hc_address, HEAT_ADDR_LENGTH));    
 
     // на вебстраницах входа
     else if (var == FPSTR(PARAM_INPUT))

@@ -68,8 +68,8 @@ void setup()
 void getHeatCounterValueF (int channel, retval_float_t* value, int* errCode)
 {
     int res = hc.readActualValueF(channel, value);
-    if ((errCode == ERR_SUCCESS) && (res != ERR_SUCCESS))
-        *errCode = res;
+    if ((*errCode == ERR_SUCCESS) && (IS_ERR((int)res)))
+        *errCode = (int)res;
 }
 
 void getHeatCounterData (HeatCounterData* hdata)

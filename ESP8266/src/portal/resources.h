@@ -44,11 +44,14 @@ static const char PARAM_COUNTER1_TYPE[] PROGMEM = "counter1_type";
 static const char PARAM_COUNTER_IMG[] PROGMEM = "counter_img";
 static const char PARAM_FACTOR[] PROGMEM = "factor";
 
+static const char PARAM_HC_PULSAR_SERIAL[] PROGMEM = "hc_pulsar_serial";
+
 
 static const char PARAM_WIZARD[] PROGMEM = "wizard";
 static const char PARAM_TRUE[] PROGMEM = "true";
 
 static const char ERROR_LENGTH_ERROR[] PROGMEM = "Превышена длина поля";
+static const char ERROR_MIN_LENGTH_ERROR[] PROGMEM = "Недостаточно символов в поле";
 static const char ERROR_VALUE[] PROGMEM = "Неверное значение";
 static const char ERROR_ATTINY_ERROR[] PROGMEM = "Ошибка связи с attiny";
 static const char ERROR_EMPTY[] PROGMEM = "Значение не может быть пустым";

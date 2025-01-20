@@ -66,6 +66,8 @@ typedef unsigned long retval_int_t;
 #define PULSAR_DBG
 
 
+#define IS_ERR(val) (val < 0)
+
 #if defined(PULSAR_DBG) && defined(LOGLEVEL)
     #define LOG_PORT Serial
     #define LOG(msg) {LOG_PORT.print(msg);}

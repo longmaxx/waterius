@@ -426,6 +426,36 @@ void save_ip_param(AsyncWebParameter *p, uint32_t &v, JsonObject &errorsObj)
     }
 }
 
+void save_param_hc_pulsar_address(AsyncWebParameter *p, char *settHCAddress, size_t size, JsonObject &errorsObj)
+{
+    if (p->value().length() > size*2)
+    {
+        LOG_ERROR(FPSTR(ERROR_LENGTH_ERROR) << ": " << p->name());
+        errorsObj[p->name()] = String(F("14"));  // Превышена длина поля
+    }
+    else if (p->value().length() < size*2)
+    {
+        LOG_ERROR(FPSTR(ERROR_MIN_LENGTH_ERROR) << ": " << p->name());
+        errorsObj[p->name()] = String(F("18"));  // Слишком короткое значение
+    }
+    else
+    {   
+        String hc_serial_s(p->value());
+        hc_serial_s.trim();  //чтобы пользователи случайно не ввели пробел
+        char hc_serial_ch[hc_serial_s.length()+1];
+        hc_serial_s.toCharArray(hc_serial_ch, hc_serial_s.length()+1);
+        uint8_t i=0;
+        uint8_t iAddrr = 0;
+        while ((i<hc_serial_s.length()) && (iAddrr<HEAT_ADDR_LENGTH))
+        {
+            char tmp = (hc_serial_ch[i++] - '0')<<4;        
+            tmp |= (hc_serial_ch[i++] - '0')&0b00001111;
+            LOG_INFO("HC address_ tmp=" << String(tmp, HEX));
+            settHCAddress[iAddrr++] = tmp; 
+        };
+        LOG_INFO(FPSTR(PARAM_SAVED) << p->name() << F("=") << hc_serial_s);
+    }
+}
 bool find_wizard_param(AsyncWebServerRequest *request)
 {
     for (size_t i = 0; i < request->params(); i++)
@@ -644,6 +674,11 @@ void applySettings(AsyncWebServerRequest *request, JsonObject &errorsObj)
                 {
                     save_param(p, sett.mqtt_discovery_topic, MQTT_TOPIC_LEN, errorsObj, false);
                 }
+            }
+
+            if (name == FPSTR(PARAM_HC_PULSAR_SERIAL))
+            {
+                save_param_hc_pulsar_address(p, sett.hc_address, HEAT_ADDR_LENGTH, errorsObj);
             }
         }
         

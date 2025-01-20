@@ -127,6 +127,7 @@ const S_ERROR_LENGTH_ERROR = 14;
 const S_ERROR_VALUE = 15;
 const S_ERROR_ATTINY_ERROR = 16;
 const S_ERROR_EMPTY = 17;
+const S_ERROR_MIN_LENGTH_ERROR = 18;
 
 function tr(str_id) {
     var id = Number(str_id);
@@ -146,6 +147,7 @@ function tr(str_id) {
         case S_WL_NO_SHIELD: return "Ошибка подключения: Код 255";
         case S_WL_SCAN_COMPLETED: return "Ошибка подключения: Код 2";
         case S_ERROR_LENGTH_ERROR: return "Превышена длина поля";
+        case S_ERROR_MIN_LENGTH_ERROR: return "Недостаточно символов";
         case S_ERROR_VALUE: return "Неверное значение";
         case S_ERROR_ATTINY_ERROR: return "Ошибка связи с attiny";
         case S_ERROR_EMPTY: return "Значение не может быть пустым";
