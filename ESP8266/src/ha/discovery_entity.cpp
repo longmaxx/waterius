@@ -10,6 +10,9 @@
  * см. подробнее
  * https://www.home-assistant.io/integrations/mqtt/#mqtt-discovery
  * https://developers.home-assistant.io/docs/core/entity/sensor/
+ * Названия полей
+ * Supported abbreviations in MQTT discovery messages
+ * https://www.home-assistant.io/integrations/mqtt/
  *
  * @param mqtt_topic корневой топик для публикации показаний как правил waterius-XXXXXX
  * @param entity_type тип сенсора sensor, number и т.д.
@@ -50,7 +53,7 @@ String build_entity_discovery(const char *mqtt_topic,
                               const char *json_attributes_template,
                               const char *advanced_conf)
 {
-    DynamicJsonDocument json_doc(JSON_DYNAMIC_MSG_BUFFER);
+    JsonDocument json_doc;
     JsonObject entity = json_doc.to<JsonObject>();
     
     entity[F("name")] = entity_name; // name
@@ -59,7 +62,8 @@ String build_entity_discovery(const char *mqtt_topic,
     String unique_id = uniqueId_prefix + "-" + entity_id;
     entity[F("uniq_id")] = unique_id.c_str(); // unique_id
 
-    entity[F("obj_id")] = unique_id.c_str(); // object_id
+    //entity[F("obj_id")] = unique_id.c_str(); // object_id. deprecated since 2026.04
+    entity[F("def_ent_id")] = unique_id.c_str(); // default_entity_id
 
     entity[F("stat_t")] = mqtt_topic; // state_topic
 
@@ -89,9 +93,9 @@ String build_entity_discovery(const char *mqtt_topic,
     if (MQTT_FORCE_UPDATE)
         entity[F("force_update")] = true; // force_update
 
-    StaticJsonDocument<JSON_SMALL_STATIC_MSG_BUFFER> json_device_doc;
+    JsonDocument json_device_doc;
     JsonObject device = json_device_doc.to<JsonObject>();
-    JsonArray identifiers = device.createNestedArray(F("identifiers")); // identifiers //ids
+    JsonArray identifiers = device[F("identifiers")].to<JsonArray>();
 
     identifiers[0] = device_id;
     identifiers[1] = device_mac;
@@ -167,7 +171,8 @@ String build_entity_discovery(const char *mqtt_topic,
         entity[F("cmd_t")] = command_topic; // command_topic
 
         //"options": ["WATER_COLD","WATER_HOT","ELECTRO","GAS","HEAT_GCAL","PORTABLE_WATER","OTHER"],
-        JsonArray options = json_doc.createNestedArray("options");
+        JsonArray options = json_doc[F("options")].to<JsonArray>();
+
         options.add("WATER_COLD");
         options.add("WATER_HOT");
         options.add("ELECTRO");
@@ -207,7 +212,7 @@ String build_entity_discovery(const char *mqtt_topic,
         String command_topic = String(mqtt_topic) + F("/") + entity_id + F("/set");
         entity[F("cmd_t")] = command_topic; // command_topic
 
-        JsonArray options = json_doc.createNestedArray("options");
+        JsonArray options = json_doc[F("options")].to<JsonArray>();
 
         options.add("MECHANIC");
         options.add("ELECTRONIC");
@@ -234,7 +239,6 @@ String build_entity_discovery(const char *mqtt_topic,
         entity[F("qos")] = 1; //qos
     }
 
-    LOG_INFO(F("MQTT: DISCOVERY SENSOR: JSON Mem usage: ") << json_doc.memoryUsage());
     LOG_INFO(F("MQTT: DISCOVERY SENSOR: JSON size: ") << measureJson(json_doc));
 
     String payload;
@@ -257,7 +261,7 @@ String get_attributes_template(const char *const attrs[][MQTT_PARAM_COUNT], int 
 {
     String json_attributes_template = "";
 
-    DynamicJsonDocument json_doc(JSON_DYNAMIC_MSG_BUFFER);
+    JsonDocument json_doc;
     JsonObject json_attributes = json_doc.to<JsonObject>();
     String attribute_name;
     String attribute_id;

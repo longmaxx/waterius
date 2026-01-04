@@ -77,7 +77,7 @@ void publish_discovery_entity(PubSubClient &mqtt_client,
 void publish_discovery_entity_extended(PubSubClient &mqtt_client, 
                                        const String &topic, 
                                        const String &discovery_topic,
-                                       const SlaveData &data, 
+                                       const AttinyData &data, 
                                        const String &device_id, 
                                        const String &device_mac,
                                        const char *const entity[MQTT_PARAM_COUNT])
@@ -139,7 +139,7 @@ void publish_discovery_entity_channel(PubSubClient &mqtt_client,
                                             device_id.c_str(), device_mac.c_str(),
                                             true, nullptr, nullptr,
                                             nullptr, nullptr, nullptr,
-                                            topic.c_str(), json_attributes_template.c_str(),
+                                            topic.c_str(), json_attributes_template.length() > 0 ? json_attributes_template.c_str() : nullptr,
                                             advanced_conf.c_str());
 
     String entity_discovery_topic = String(discovery_topic) + "/" + entity_type + "/" + uniqueId_prefix + "/" + entity_id + "/config";
@@ -159,13 +159,15 @@ void publish_discovery_entity_channel(PubSubClient &mqtt_client,
 void publish_discovery_general_entities(PubSubClient &mqtt_client, 
                                         const String &topic, 
                                         const String &discovery_topic, 
-                                        const SlaveData &data, 
+                                        const AttinyData &data, 
                                         const String &device_id, 
                                         const String &device_mac)
 {
     publish_discovery_entity_extended(mqtt_client, topic, discovery_topic, data, device_id, device_mac, ENTITY_RESETS);
     publish_discovery_entity(mqtt_client, topic, discovery_topic, device_id, device_mac, ENTITY_TIMESTAMP);
     publish_discovery_entity(mqtt_client, topic, discovery_topic, device_id, device_mac, ENTITY_PERIOD_MIN);
+    //нужно ли это прям диагностическая информация 
+    //publish_discovery_entity(mqtt_client, topic, discovery_topic, device_id, device_mac, ENTITY_PERIOD_MIN_TUNED);
     /* Сенсор с атрибутами  Группа №1 */
     publish_discovery_entity(mqtt_client, topic, discovery_topic, device_id, device_mac, ENTITY_VOLTAGE);
     publish_discovery_entity(mqtt_client, topic, discovery_topic, device_id, device_mac, ENTITY_VOLTAGE_DIFF);
@@ -174,6 +176,10 @@ void publish_discovery_general_entities(PubSubClient &mqtt_client,
     publish_discovery_entity(mqtt_client, topic, discovery_topic, device_id, device_mac, ENTITY_ROUTER_MAC);
     publish_discovery_entity(mqtt_client, topic, discovery_topic, device_id, device_mac, ENTITY_MAC);
     publish_discovery_entity(mqtt_client, topic, discovery_topic, device_id, device_mac, ENTITY_IP);
+    publish_discovery_entity(mqtt_client, topic, discovery_topic, device_id, device_mac, ENTITY_WIFI_CHANNEL);
+
+    publish_discovery_entity(mqtt_client, topic, discovery_topic, device_id, device_mac, ENTITY_WIWI_CONNECT_ERRORS);
+    publish_discovery_entity(mqtt_client, topic, discovery_topic, device_id, device_mac, ENTITY_NTP_ERRORS);
 }
 
 /**
@@ -198,7 +204,7 @@ void add_entity_attribute(JsonObject &json_attributes,
 String channel_entity_attributes(const int channel, const int channel_name)
 {
     String json_attributes_template;
-    DynamicJsonDocument json_doc(JSON_DYNAMIC_MSG_BUFFER);
+    JsonDocument json_doc;
     JsonObject json_attributes = json_doc.to<JsonObject>();
 
     add_entity_attribute(json_attributes, ENTITY_CHANNEL_IMP, channel, channel_name);
@@ -289,7 +295,7 @@ void publish_discovery_channel_entities(PubSubClient &mqtt_client,
 void publish_discovery(PubSubClient &mqtt_client, 
                        const String &topic, 
                        const String &discovery_topic, 
-                       const SlaveData &data, 
+                       const AttinyData &data, 
                        const Settings &sett)
 {
     LOG_INFO(F("MQTT: Publishing discovery topic"));

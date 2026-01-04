@@ -11,6 +11,33 @@
 /*
 Версии прошивки для ESP
 
+1.1.19  - 2025.11.07 - dontsovcmc
+                      1. Пароль от Wi-Fi и MQTT в интерфейс передаётся *******.
+
+1.1.18  - 2025.11.04 - dontsovcmc
+                      1. #351 HomeAssistant: убрал object_id, заменил на default_entity_id 
+
+1.1.17  - 2025.10.11 - dontsovcmc
+                      1. С 1.1.12 не работала ручная установка веса импульса. Исправил
+
+1.1.16  - 2025.09.11 - dontsovcmc
+                      1. Исправили json_attributes_template для HomeAssistant, спасибо Drafteed
+                      2. Обновили версию espressif8266@4.2.1
+                      3. Обновили версии ArduinoJson@7.3.1, PubSubClient@2.8.0, ESP32Async/ESPAsyncWebServer@3.6.0, ESP32Async/ESPAsyncTCP@2.0.0
+
+1.1.13  - 2025.07.31 - dontsovcmc
+                      1. Алгоритм пробуждения учитывает возможный не выход на связь.
+
+1.1.12  - 2025.07.11 - dontsovcmc
+                      1. Автоопределение веса импульса счетчика. > 2 имп. = 1л/имп. Горячая = как Холодная.
+                      2. При повторной настройке пропускаем детектирование счетчика. 
+
+1.1.11  - 2025.06.01 - dontsovcmc
+                      1. Исправлен алгоритм пробуждения раз в Х мин. 
+
+1.1.8  - 2025.04.01 - dontsovcmc
+                      1. Первое пробуждение через 22-24ч
+
 1.1.7  - 2024.12.02 - dontsovcmc
                       1. Исправлена ошибка подсчета электричества на красном входе
                       2. Исправлена ошибка отображения ошибки от бэкенда
@@ -51,7 +78,7 @@
 1.1.0  - 2024.01.24 - dontsovcmc
                       1. Рефакторинг веб интерфейса
                       2. Удалён blynk
-                      3. Ошибка если прошивка attiny будет ниже или равна 29 (getSlaveData)
+                      3. Ошибка если прошивка attiny будет ниже или равна 29 (getAttinyData)
                       4. Добавил картинки на каждый тип счетчика и вход
                       5. Перенес строки в string.js TODO избавится от русских слов в CPP файлах
                       6. Удалил поле good. Всегда было 1.
@@ -314,7 +341,6 @@
 #define HARDWARE_VERSION "1.0.0"
 #define MANUFACTURER "Waterius"
 
-#define JSON_DYNAMIC_MSG_BUFFER 2048
 #define JSON_SMALL_STATIC_MSG_BUFFER 256
 
 #define ROUTER_MAC_LENGTH 8
@@ -354,6 +380,16 @@
 #define WATERIUS_CLASSIC 0
 #define WATERIUS_4C2W 1
 
+/*
+   Вход attiny
+ */
+enum InputColor
+{
+    INPUT0_RED = 0,  // 0 - Красный вход, ГВС
+    INPUT1_BLUE = 1  // 1 - Синий вход, ХВС
+};
+
+
 enum CounterType
 {
     NAMUR = 0,
@@ -362,6 +398,7 @@ enum CounterType
     HALL = 3, 
     NONE = 0xFF   // 255
 };
+
 
 enum CounterName
 {
@@ -374,6 +411,7 @@ enum CounterName
     OTHER = 6,
     HEAT_KWT = 7
 };
+
 
 // согласно
 enum DataType
@@ -414,6 +452,16 @@ struct CalculatedData
 
 /*
 Настройки хранящиеся EEPROM
+
+Размер структуры:
+На ESP8266 (и большинстве 32-битных платформ) выравнивание по 2 байта обычно означает, 
+что все поля должны начинаться с адреса, кратного 2.
+
+Но если в структуре встречаются поля большего размера (например, time_t — 8 байт), 
+компилятор может выравнивать их по 4 или 8 байтам, чтобы ускорить доступ к данным.
+
+Если перед time_t идут поля с меньшим выравниванием (например, char или uint8_t), 
+компилятор может вставить дополнительные байты-паддинги для правильного выравнивания следующего поля.
 */
 struct Settings
 {
@@ -433,6 +481,7 @@ struct Settings
     // 
     char company[COMPANY_LEN] = {0};
     char place[PLACE_LEN] = {0};
+
     char reserved_blynk[BLYNK_RESERVED] = {0};
 
     char http_url[HOST_LEN] = {0};
@@ -500,7 +549,7 @@ struct Settings
     /*
     Установленный период отправки с учетом погрешности
     */
-    uint16_t set_wakeup = DEFAULT_WAKEUP_PERIOD_MIN;
+    uint16_t period_min_tuned = DEFAULT_WAKEUP_PERIOD_MIN;
 
     /*
     Время последней отправки по расписанию
@@ -570,11 +619,12 @@ struct Settings
 
     uint8_t reserved8 = 0;
 
+    time_t base_time = 0; // Size of time_t: 8
     /*
     Зарезервируем кучу места, чтобы не писать конвертер конфигураций.
     Будет актуально для On-the-Air обновлений
     */
-    uint8_t reserved9[84] = {0};
+    uint8_t reserved9[76] = {0};
 
 }; // 960 байт
 

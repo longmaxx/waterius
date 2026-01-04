@@ -21,7 +21,7 @@
 #include <SoftwareSerial.h>
 
 MasterI2C masterI2C;  // Для общения с Attiny85 по i2c
-SlaveData data;       // Данные от Attiny85
+AttinyData data;       // Данные от Attiny85
 Settings sett;        // Настройки соединения и предыдущие показания из EEPROM
 CalculatedData cdata; // вычисляемые данные
 ADC_MODE(ADC_VCC);
@@ -105,7 +105,7 @@ void loop()
     bool config_loaded = false;
 
     // спрашиваем у Attiny85 повод пробуждения и данные true) 
-    if (masterI2C.getMode(mode) && masterI2C.getSlaveData(data))
+    if (masterI2C.getMode(mode) && masterI2C.getAttinyData(data))
     {
         // Загружаем конфигурацию из EEPROM
         config_loaded = load_config(sett);
@@ -131,7 +131,7 @@ void loop()
             wifi_shutdown();
 
             LOG_INFO(F("Set mode MANUAL_TRANSMIT to attiny"));
-            masterI2C.sendCmd('T'); // Режим "Передача"
+            masterI2C.setTransmitMode(); // Режим "Передача"
 
             LOG_INFO(F("Restart ESP"));
             LOG_END();
@@ -148,7 +148,7 @@ void loop()
             {
                 log_system_info();
 
-                DynamicJsonDocument json_data(JSON_DYNAMIC_MSG_BUFFER);
+                JsonDocument json_data;
 
 #ifndef MQTT_DISABLED
                 // Подключаемся и подписываемся на мктт
@@ -214,16 +214,10 @@ void loop()
 
                 update_config(sett, data, cdata);
 
-                if (!masterI2C.setWakeUpPeriod(sett.set_wakeup))
+                if (!masterI2C.setWakeUpPeriod(sett.period_min_tuned))
                 {
                     LOG_ERROR(F("Wakeup period wasn't set"));
                 }
-                else // Разбуди меня через...
-                {
-                    LOG_INFO(F("Wakeup period, min:") << sett.wakeup_per_min);
-                    LOG_INFO(F("Wakeup period (adjusted), min:") << sett.set_wakeup);
-                }
-
             }
             store_config(sett);  // т.к. сохраняем число ошибок подключения
         }
@@ -240,8 +234,8 @@ void loop()
 
     uint8_t vendor_id = ESP.getFlashChipVendorId();
 
-    masterI2C.sendCmd('Z'); // через 20мс attiny отключит EN
-    
+    masterI2C.setSleep(); // через 20мс attiny отключит EN
+
     // { 0xC4, "Giantec Semiconductor, Inc." }, https://github.com/elitak/freeipmi/blob/master/libfreeipmi/spec/ipmi-jedec-manufacturer-identification-code-spec.c
     if (vendor_id != 0xC4) 
     {

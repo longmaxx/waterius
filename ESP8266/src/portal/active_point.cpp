@@ -28,8 +28,8 @@ const String localIPURL = "http://192.168.4.1";
 
 FSInfo fs_info;
 
-extern SlaveData data;
-extern SlaveData runtime_data;
+extern AttinyData data;
+extern AttinyData runtime_data;
 extern MasterI2C masterI2C;
 extern Settings sett;
 extern CalculatedData cdata;
@@ -90,6 +90,20 @@ String get_counter_img(const uint8_t input, const uint8_t name, const uint8_t ct
     }
 }
 
+String valid_counter_type(const uint8_t ctype)
+{
+    switch (ctype)
+    {
+        case NAMUR: 
+        case DISCRETE: 
+        case ELECTRONIC: 
+        case HALL:
+        case NONE:
+            return String(ctype);
+    }
+    return String(CounterType::NAMUR);
+}
+
 String parse_sett_hc_pulsar_serial(char *sett, size_t size)
 {
     char iChars[10] = {'0','1','2','3','4','5','6','7','8','9'};
@@ -116,6 +130,7 @@ String parse_sett_hc_pulsar_serial(char *sett, size_t size)
     param_heatcounter_serial_curval[i_param_heatcounter_serial_curval++] = '\0';        
     return String(param_heatcounter_serial_curval);
 }
+
 
 String processor0(const String &var)
 {
@@ -157,7 +172,8 @@ String processor_main(const String &var, const uint8_t input)
     else if (var == FPSTR(PARAM_MQTT_LOGIN))
         return replace_value(sett.mqtt_login);
     else if (var == FPSTR(PARAM_MQTT_PASSWORD))
-        return replace_value(sett.mqtt_password);
+        return sett.mqtt_password[0] ? FPSTR(PARAM_ASTERICS) : String();
+        
     else if (var == FPSTR(PARAM_MQTT_TOPIC))
         return replace_value(sett.mqtt_topic);
     else if (var == FPSTR(PARAM_HC_PULSAR_SERIAL))
@@ -216,27 +232,27 @@ String processor_main(const String &var, const uint8_t input)
     {
         switch (input)
         {
-            case 0: return String(runtime_data.counter_type0);
-            case 1: return String(runtime_data.counter_type1);
+            case 0: return valid_counter_type(runtime_data.counter_type0);
+            case 1: return valid_counter_type(runtime_data.counter_type1);
         }
     }
 
     else if (var == FPSTR(PARAM_COUNTER0_TYPE))
     {
-        return String(runtime_data.counter_type0);
+        return valid_counter_type(runtime_data.counter_type0);
     }
 
     else if (var == FPSTR(PARAM_COUNTER1_TYPE))
     {
-        return String(runtime_data.counter_type1);
+        return valid_counter_type(runtime_data.counter_type1);
     }
 
     else if (var == FPSTR(PARAM_FACTOR))
     {
         switch (input)
         {
-            case 0: return sett.factor0 == AS_COLD_CHANNEL ? F("10") : String(sett.factor0);
-            case 1: return sett.factor1 == AUTO_IMPULSE_FACTOR ? F("10") : String(sett.factor1);
+            case 0: return String(sett.factor0); //sett.factor0 == AS_COLD_CHANNEL ? F("10") : String(sett.factor0);
+            case 1: return String(sett.factor1); //sett.factor1 == AUTO_IMPULSE_FACTOR ? F("10") : String(sett.factor1);
         }
     }
 
@@ -270,7 +286,7 @@ String processor_main(const String &var, const uint8_t input)
     else if (var == FPSTR(PARAM_SSID))
         return replace_value(sett.wifi_ssid);
     else if (var == FPSTR(PARAM_PASSWORD))
-        return replace_value(sett.wifi_password);
+        return sett.wifi_password[0] ? FPSTR(PARAM_ASTERICS) : String();
 
     else if (var == FPSTR(PARAM_WIFI_PHY_MODE))
         return String(sett.wifi_phy_mode);

@@ -1,9 +1,6 @@
 #include "active_point_api.h"
-#include "ESPAsyncTCP.h"
-#include "WebHandlerImpl.h"
 #include <IPAddress.h>
 #include <LittleFS.h>
-#include "AsyncJson.h"
 
 #include "setup.h"
 #include "Logging.h"
@@ -18,18 +15,29 @@ extern bool start_connect_flag;
 extern wl_status_t wifi_connect_status;
 extern bool factory_reset_flag;
 
-SlaveData runtime_data;
-extern SlaveData data;
+AttinyData runtime_data;
+extern AttinyData data;
 extern MasterI2C masterI2C;
 extern Settings sett;
 extern CalculatedData cdata;
 
 #define IMPULS_LIMIT_1 3 // Если пришло импульсов меньше 3, то перед нами 10л/имп. Если больше, то 1л/имп.
 
-uint8_t get_auto_factor(const uint32_t runtime_impulses, const uint32_t impulses)
+uint16_t get_auto_factor(const uint32_t runtime_impulses, 
+                         const uint32_t impulses,
+                         const uint16_t factor,
+                         const uint16_t factor_cold)
 {
-    return (runtime_impulses - impulses <= IMPULS_LIMIT_1) ? 10 : 1;
+    switch (factor) 
+    {
+        case AUTO_IMPULSE_FACTOR:
+            return (runtime_impulses - impulses <= IMPULS_LIMIT_1) ? 10 : 1;
+        case AS_COLD_CHANNEL:
+            return factor_cold;
+    }
+    return factor;
 }
+
 
 /**
  * @brief Запрос состояния подключения к роутеру.
@@ -41,7 +49,7 @@ void get_api_connect_status(AsyncWebServerRequest *request)
 {
     LOG_INFO(F("GET ") << request->url());
 
-    DynamicJsonDocument json_doc(JSON_SMALL_STATIC_MSG_BUFFER);
+    JsonDocument json_doc; //(JSON_SMALL_STATIC_MSG_BUFFER);
     JsonObject ret = json_doc.to<JsonObject>();
 
     if (start_connect_flag)
@@ -85,13 +93,13 @@ void get_api_networks(AsyncWebServerRequest *request)
     }
     else if (n)
     {
-        DynamicJsonDocument json_doc(JSON_DYNAMIC_MSG_BUFFER);
+        JsonDocument json_doc;
         JsonArray array = json_doc.to<JsonArray>();
 
         for (int i = 0; i < n; ++i)
         {
             LOG_INFO(WiFi.SSID(i) << " " << WiFi.RSSI(i));
-            JsonObject obj = array.createNestedObject();
+            JsonObject obj = array.add<JsonObject>();
             obj["ssid"] = WiFi.SSID(i);
             obj["level"] = int(round(map(WiFi.RSSI(i), -100, -50, 1, 4)));
             obj["wifi_channel"] = WiFi.channel();
@@ -116,9 +124,9 @@ void post_api_save_connect(AsyncWebServerRequest *request)
 {
     LOG_INFO(F("POST ") << request->url());
 
-    DynamicJsonDocument json_doc(JSON_SMALL_STATIC_MSG_BUFFER);
+    JsonDocument json_doc; // (JSON_SMALL_STATIC_MSG_BUFFER);
     JsonObject ret = json_doc.to<JsonObject>();
-    JsonObject errorsObj = ret.createNestedObject(F("errors"));
+    JsonObject errorsObj = ret[F("errors")].to<JsonObject>();
 
     // Если канал WiFi отличен от текущего канала AP ESP, то возможно отключение телефона
     uint8_t channel = sett.wifi_channel;
@@ -198,7 +206,7 @@ void get_api_main_status(AsyncWebServerRequest *request)
 {
     LOG_INFO(F("GET ") << request->url());
 
-    DynamicJsonDocument json_doc(JSON_SMALL_STATIC_MSG_BUFFER);
+    JsonDocument json_doc; // (JSON_SMALL_STATIC_MSG_BUFFER);
     JsonArray array = json_doc.to<JsonArray>();
 
     wl_status_t status = WiFi.status();
@@ -206,7 +214,7 @@ void get_api_main_status(AsyncWebServerRequest *request)
     
     if (status == WL_CONNECT_FAILED || status == WL_CONNECTION_LOST || status == WL_WRONG_PASSWORD)
     {
-        JsonObject obj = array.createNestedObject();
+        JsonObject obj = array.add<JsonObject>();
         obj["error"] = F("1");  // S_WIFI_CONNECT "Ошибка подключения к Wi-Fi"
         obj["link_text"] = F("5"); // S_SETUP Настроить
         obj["link"] = F("/wifi_settings.html?status_code=") + String(status);
@@ -217,14 +225,14 @@ void get_api_main_status(AsyncWebServerRequest *request)
         {
             if (status == WL_CONNECTED)
             {
-                JsonObject obj = array.createNestedObject();
+                JsonObject obj = array.add<JsonObject>();
                 obj["error"] = F("2");  // S_SETUP_COUNTERS "Ватериус успешно подключился к Wi-Fi. Теперь настроим счётчики."
                 obj["link_text"] = F("5"); // S_SETUP Настроить
                 obj["link"] = F("/input/1/setup.html");
             }
             else 
             {
-                JsonObject obj = array.createNestedObject();
+                JsonObject obj = array.add<JsonObject>();
                 obj["error"] = F("3");  // S_NEED_SETUP "Ватериус ещё не настроен"
                 obj["link_text"] = F("6"); // S_LETSGO Приступить
                 obj["link"] = F("/captive_portal_start.html");
@@ -232,7 +240,6 @@ void get_api_main_status(AsyncWebServerRequest *request)
         }
     }
 
-    LOG_INFO(F("JSON: Mem usage: ") << json_doc.memoryUsage());
     LOG_INFO(F("JSON: Size: ") << measureJson(json_doc));
 
     AsyncResponseStream *response = request->beginResponseStream("application/json");
@@ -259,45 +266,23 @@ void get_api_status(AsyncWebServerRequest *request, const int index)
 {
     LOG_INFO(F("GET ") << request->url());
 
-    DynamicJsonDocument json_doc(JSON_SMALL_STATIC_MSG_BUFFER);
+    JsonDocument json_doc; // (JSON_SMALL_STATIC_MSG_BUFFER);
     JsonObject ret = json_doc.to<JsonObject>();
 
-    uint16_t factor;
-    if (masterI2C.getSlaveData(runtime_data))
+    if (masterI2C.getAttinyData(runtime_data))
     {
-        if (index == 0)
+        const uint16_t factor_cold = get_auto_factor(runtime_data.impulses1, data.impulses1, sett.factor1, sett.factor1);
+
+        if (index == INPUT0_RED)
         {
-            if (sett.factor0 == AS_COLD_CHANNEL)
-            {
-                if (sett.factor1 == AUTO_IMPULSE_FACTOR)
-                {
-                    factor = get_auto_factor(runtime_data.impulses0, data.impulses0);
-                }
-                else
-                {
-                    factor = sett.factor1;
-                }
-            }
-            else
-            {
-                factor = sett.factor0;
-            }
             ret[F("state")] = int(runtime_data.impulses0 > data.impulses0);
-            ret[F("factor")] = factor;
+            ret[F("factor")] = get_auto_factor(runtime_data.impulses0, data.impulses0, sett.factor0, factor_cold);
             ret[F("impulses")] = runtime_data.impulses0 - data.impulses0;
         }
-        else if (index == 1)
+        else if (index == INPUT1_BLUE)
         {
-            if (sett.factor1 == AUTO_IMPULSE_FACTOR)
-            {
-                factor = get_auto_factor(runtime_data.impulses1, data.impulses1);
-            }
-            else // повторная настройка
-            {
-                factor = sett.factor1;
-            }
             ret[F("state")] = int(runtime_data.impulses1 > data.impulses1);
-            ret[F("factor")] = factor;
+            ret[F("factor")] = factor_cold;
             ret[F("impulses")] = runtime_data.impulses1 - data.impulses1;
         }
         // root[F("elapsed")] = (uint32_t)(SETUP_TIME_SEC - millis() / 1000.0);
@@ -311,6 +296,18 @@ void get_api_status(AsyncWebServerRequest *request, const int index)
     serializeJson(json_doc, *response);
     request->send(response);
 };
+
+inline bool is_all_asterisks(const String& s) {
+    if (s.length() == 0) 
+        return false;
+    for (unsigned int i = 0; i < s.length(); ++i) {
+        char c = s[i];
+        if (c != '*' && c != ' ' && c != '\t') 
+            return false;  // только *, пробел, таб
+    }
+    return true;
+}
+
 
 /**
  * @brief Запрос сохранения настроек
@@ -331,7 +328,7 @@ void get_api_status(AsyncWebServerRequest *request, const int index)
  *      }
  */
 
-void save_param(AsyncWebParameter *p, char *dest, size_t size, JsonObject &errorsObj, bool required /*true*/)
+void save_param(const AsyncWebParameter *p, char *dest, size_t size, JsonObject &errorsObj, bool required /*true*/)
 {
     if (p->value().length() >= size)
     {
@@ -343,6 +340,10 @@ void save_param(AsyncWebParameter *p, char *dest, size_t size, JsonObject &error
         LOG_ERROR(FPSTR(ERROR_EMPTY) << ": " << p->name());
         errorsObj[p->name()] = String(F("17"));  // Значение не может быть пустым
     }
+    else if (is_all_asterisks(p->value()))
+    {
+        LOG_INFO(F("NOT ") << FPSTR(PARAM_SAVED) << p->name() << F(" **** value"));
+    }
     else
     {   
         String value(p->value());
@@ -352,7 +353,7 @@ void save_param(AsyncWebParameter *p, char *dest, size_t size, JsonObject &error
     }
 }
 
-void save_param(AsyncWebParameter *p, uint16_t &v, JsonObject &errorsObj)
+void save_param(const AsyncWebParameter *p, uint16_t &v, JsonObject &errorsObj)
 {
     if (p->value().toInt() == 0)
     {
@@ -366,7 +367,7 @@ void save_param(AsyncWebParameter *p, uint16_t &v, JsonObject &errorsObj)
     }
 }
 
-void save_param(AsyncWebParameter *p, uint8_t &v, JsonObject &errorsObj, const bool zero_ok)
+void save_param(const AsyncWebParameter *p, uint8_t &v, JsonObject &errorsObj, const bool zero_ok)
 {
     if (!zero_ok && p->value().toInt() == 0)
     {
@@ -380,7 +381,7 @@ void save_param(AsyncWebParameter *p, uint8_t &v, JsonObject &errorsObj, const b
     }
 }
 
-void save_bool_param(AsyncWebParameter *p, uint8_t &v, JsonObject &errorsObj)
+void save_bool_param(const AsyncWebParameter *p, uint8_t &v, JsonObject &errorsObj)
 {
     if (p->value().toInt() > 1)
     {
@@ -394,7 +395,7 @@ void save_bool_param(AsyncWebParameter *p, uint8_t &v, JsonObject &errorsObj)
     }
 }
 
-void save_param(AsyncWebParameter *p, float &v, JsonObject &errorsObj)
+void save_param(const AsyncWebParameter *p, float &v, JsonObject &errorsObj)
 {
     /* Позволяем вводить 0.0 у счётчиков.
     if (p->value().toFloat() == 0.0)
@@ -411,7 +412,7 @@ void save_param(AsyncWebParameter *p, float &v, JsonObject &errorsObj)
     }
 }
 
-void save_ip_param(AsyncWebParameter *p, uint32_t &v, JsonObject &errorsObj)
+void save_ip_param(const AsyncWebParameter *p, uint32_t &v, JsonObject &errorsObj)
 {
     IPAddress ip;
     if (ip.fromString(p->value()))
@@ -460,7 +461,7 @@ bool find_wizard_param(AsyncWebServerRequest *request)
 {
     for (size_t i = 0; i < request->params(); i++)
     {
-        AsyncWebParameter *p = request->getParam(i);
+        const AsyncWebParameter *p = request->getParam(i);
         if (p->name() == FPSTR(PARAM_WIZARD))
         {
             return p->value() == FPSTR(PARAM_TRUE);
@@ -473,7 +474,7 @@ uint8_t get_param_uint8(AsyncWebServerRequest *request, const String &name)
 {
     for (size_t i = 0; i < request->params(); i++)
     {
-        AsyncWebParameter *p = request->getParam(i);
+        const AsyncWebParameter *p = request->getParam(i);
         if (p->name() == name)
         {
             return p->value().toInt();
@@ -490,7 +491,7 @@ void applyInputSettings(AsyncWebServerRequest *request, JsonObject &errorsObj, c
 
     for (int i = 0; i < params; i++)
     {
-        AsyncWebParameter *p = request->getParam(i);
+        const AsyncWebParameter *p = request->getParam(i);
         const String &name = p->name();
         
         LOG_INFO(F("parameter ") << name << "=" << p->value());
@@ -498,13 +499,13 @@ void applyInputSettings(AsyncWebServerRequest *request, JsonObject &errorsObj, c
         {
             switch (input) 
             {
-                case 0: 
+                case INPUT0_RED: 
                     save_param(p, sett.channel0_start, errorsObj);
                     sett.impulses0_start = runtime_data.impulses0;
                     sett.impulses0_previous = sett.impulses0_start;
                     LOG_INFO("impulses0_start=" << sett.impulses0_start);
                     break;
-                case 1:
+                case INPUT1_BLUE:
                     save_param(p, sett.channel1_start, errorsObj);
                     sett.impulses1_start = runtime_data.impulses1;
                     sett.impulses1_previous = sett.impulses1_start;
@@ -516,10 +517,10 @@ void applyInputSettings(AsyncWebServerRequest *request, JsonObject &errorsObj, c
         {
             switch (input)
             {
-                case 0: 
+                case INPUT0_RED: 
                     save_param(p, sett.serial0, SERIAL_LEN, errorsObj, false);
                     break;
-                case 1: 
+                case INPUT1_BLUE: 
                     save_param(p, sett.serial1, SERIAL_LEN, errorsObj, false);
                     break;
             }
@@ -528,10 +529,10 @@ void applyInputSettings(AsyncWebServerRequest *request, JsonObject &errorsObj, c
         {   
             switch(input) 
             {
-                case 0: 
+                case INPUT0_RED: 
                     save_param(p, sett.counter0_name, errorsObj, true);
                     break;
-                case 1:
+                case INPUT1_BLUE:
                     save_param(p, sett.counter1_name, errorsObj, true);
                     break;
             }
@@ -541,7 +542,7 @@ void applyInputSettings(AsyncWebServerRequest *request, JsonObject &errorsObj, c
         {   
             switch (input) 
             {
-                case 0:
+                case INPUT0_RED:
                     if (!masterI2C.setCountersType(p->value().toInt(), runtime_data.counter_type1))
                     {
                         LOG_ERROR(FPSTR(ERROR_ATTINY_ERROR) << ": " << p->name());
@@ -553,7 +554,7 @@ void applyInputSettings(AsyncWebServerRequest *request, JsonObject &errorsObj, c
                         LOG_INFO(FPSTR(PARAM_SAVED0) << p->name() << F("=") << p->value());
                     }
                     break;
-                case 1:
+                case INPUT1_BLUE:
                     if (!masterI2C.setCountersType(runtime_data.counter_type0, p->value().toInt()))
                     {
                         LOG_ERROR(FPSTR(ERROR_ATTINY_ERROR) << ": " << p->name());
@@ -570,14 +571,36 @@ void applyInputSettings(AsyncWebServerRequest *request, JsonObject &errorsObj, c
         }
         else if (name == FPSTR(PARAM_FACTOR))
         {
-            switch (input) 
+            uint16_t value = p->value().toInt();
+            
+            // Авто или Как у холодной воды
+            if (value == AUTO_IMPULSE_FACTOR || value == AS_COLD_CHANNEL)
+            {   
+                const uint16_t factor_cold = get_auto_factor(runtime_data.impulses1, data.impulses1, sett.factor1, sett.factor1);
+                
+                switch (input) 
+                {
+                    case INPUT0_RED: 
+                        sett.factor0 = get_auto_factor(runtime_data.impulses0, data.impulses0, sett.factor0, factor_cold);
+                        LOG_INFO(FPSTR(PARAM_FACTOR) << p->name() << F("->") << sett.factor0);
+                        break;
+                    case INPUT1_BLUE:
+                        sett.factor1 = factor_cold;
+                        LOG_INFO(FPSTR(PARAM_FACTOR) << p->name() << F("->") << sett.factor1);
+                        break;
+                }
+            }
+            else
             {
-                case 0: 
-                    save_param(p, sett.factor0, errorsObj);
-                    break;
-                case 1:
-                    save_param(p, sett.factor1, errorsObj);
-                    break;
+                switch (input) 
+                {
+                    case INPUT0_RED: 
+                        save_param(p, sett.factor0, errorsObj);
+                        break;
+                    case INPUT1_BLUE:
+                        save_param(p, sett.factor1, errorsObj);
+                        break;
+                }
             }
         }
     }
@@ -594,7 +617,7 @@ void applySettings(AsyncWebServerRequest *request, JsonObject &errorsObj)
     // Вначале bool, чтобы дальше проверять только требуемые параметры
     for (int i = 0; i < params; i++)
     {
-        AsyncWebParameter *p = request->getParam(i);
+        const AsyncWebParameter *p = request->getParam(i);
         const String &name = p->name();
 
         LOG_INFO(F("parameter ") << name << "=" << p->value());
@@ -622,7 +645,7 @@ void applySettings(AsyncWebServerRequest *request, JsonObject &errorsObj)
 
     for (int i = 0; i < params; i++)
     {
-        AsyncWebParameter *p = request->getParam(i);
+        const AsyncWebParameter *p = request->getParam(i);
         const String &name = p->name();
 
         if (sett.waterius_on)
@@ -701,7 +724,7 @@ void applySettings(AsyncWebServerRequest *request, JsonObject &errorsObj)
         if (name == FPSTR(PARAM_WAKEUP_PER_MIN))
         {
             save_param(p, sett.wakeup_per_min, errorsObj);
-            sett.set_wakeup = sett.wakeup_per_min;
+            reset_period_min_tuned(sett);
         }
         else if (name == FPSTR(PARAM_NTP_SERVER))
         {
@@ -736,9 +759,9 @@ void applySettings(AsyncWebServerRequest *request, JsonObject &errorsObj)
 void post_api_save(AsyncWebServerRequest *request)
 {
     LOG_INFO(F("POST ") << request->url());
-    DynamicJsonDocument json_doc(JSON_DYNAMIC_MSG_BUFFER);
+    JsonDocument json_doc;
     JsonObject ret = json_doc.to<JsonObject>();
-    JsonObject errorsObj = ret.createNestedObject("errors");
+    JsonObject errorsObj = ret[F("errors")].to<JsonObject>();
 
     applySettings(request, errorsObj);
 
@@ -753,15 +776,15 @@ void post_api_save(AsyncWebServerRequest *request)
 void post_api_save_input_type(AsyncWebServerRequest *request)
 {
     LOG_INFO(F("POST ") << request->url());
-    DynamicJsonDocument json_doc(JSON_DYNAMIC_MSG_BUFFER);
+    JsonDocument json_doc;
     JsonObject ret = json_doc.to<JsonObject>();
-    JsonObject errorsObj = ret.createNestedObject("errors");
+    JsonObject errorsObj = ret[F("errors")].to<JsonObject>();
 
     uint8_t input = get_param_uint8(request, FPSTR(PARAM_INPUT));
     //applySettings(request, errorsObj); ? нужно ли тут
     applyInputSettings(request, errorsObj, input);
 
-    if (input == 0)
+    if (input == INPUT0_RED)
     {   
         if (sett.counter0_name == CounterName::ELECTRO)
         {
@@ -771,12 +794,16 @@ void post_api_save_input_type(AsyncWebServerRequest *request)
         {
             ret[F("redirect")] = F("/index.html");
         }
-        else 
+        else if (sett.factor0 == AS_COLD_CHANNEL) // Первая настройка
         {
             ret[F("redirect")] = F("/input/0/detect.html");
         }
+        else 
+        {
+            ret[F("redirect")] = F("/input/0/settings.html");
+        }
     } 
-    else if (input == 1)
+    else if (input == INPUT1_BLUE)
     {
         if (sett.counter1_name == CounterName::ELECTRO)
         {
@@ -786,9 +813,13 @@ void post_api_save_input_type(AsyncWebServerRequest *request)
         {
             ret[F("redirect")] = F("/index.html");
         }
-        else 
+        else if (sett.factor1 == AUTO_IMPULSE_FACTOR) // Первая настройка
         {
             ret[F("redirect")] = F("/input/1/detect.html");
+        }
+        else 
+        {
+            ret[F("redirect")] = F("/input/1/settings.html");
         }
     }
 
@@ -815,7 +846,7 @@ void post_api_reset(AsyncWebServerRequest *request)
 {
     LOG_INFO(F("POST ") << request->url());
 
-    DynamicJsonDocument json_doc(JSON_SMALL_STATIC_MSG_BUFFER);
+    JsonDocument json_doc; // (JSON_SMALL_STATIC_MSG_BUFFER);
     JsonObject ret = json_doc.to<JsonObject>();
 
     ret[F("redirect")] = F("/");
