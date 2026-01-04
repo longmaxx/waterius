@@ -1,11 +1,15 @@
 #include "subscribe.h"
 #include "Logging.h"
+#include "publish.h"
 #include "publish_data.h"
+#include "config.h"
 #include "utils.h"
 
 #define MQTT_MAX_TRIES 5
 #define MQTT_CONNECT_DELAY 100
 #define MQTT_SUBSCRIPTION_TOPIC "/#"
+
+extern MasterI2C masterI2C;
 
 /**
  * @brief Обновление настроек по сообщению MQTT
@@ -15,7 +19,7 @@
  * @param sett настройки
  * @param json_data данные в JSON
  */
-bool update_settings(String &topic, String &payload, Settings &sett, const SlaveData &data, DynamicJsonDocument &json_data)
+bool update_settings(String &topic, String &payload, Settings &sett, const AttinyData &data, JsonDocument &json_data)
 {
     bool updated = false;
     if (topic.endsWith(F("/set"))) // пришла команда на изменение
@@ -24,7 +28,7 @@ bool update_settings(String &topic, String &payload, Settings &sett, const Slave
         int endslash = topic.lastIndexOf('/');
         int prevslash = topic.lastIndexOf('/', endslash - 1);
         String param = topic.substring(prevslash + 1, endslash);
-        LOG_INFO(F("MQTT CALLBACK: Parameter ") << param);
+        LOG_INFO(F("MQTT: CALLBACK: Parameter ") << param);
 
         // period_min
         if (param.equals(F("period_min")))
@@ -37,8 +41,10 @@ bool update_settings(String &topic, String &payload, Settings &sett, const Slave
                 {
                     LOG_INFO(F("MQTT: CALLBACK: Old Settings.wakeup_per_min: ") << sett.wakeup_per_min);
                     sett.wakeup_per_min = period_min;
+                    reset_period_min_tuned(sett);
+
                     // если есть ключ то время уже получено и json уже сформирован, можно отправлять
-                    if (json_data.containsKey("period_min"))
+                    if (json_data["period_min"].is<int>())   //todo добавить F("")
                     {
                         json_data[F("period_min")] = period_min;
                         updated = true;
@@ -55,7 +61,7 @@ bool update_settings(String &topic, String &payload, Settings &sett, const Slave
                 {
                     LOG_INFO(F("MQTT: CALLBACK: Old Settings.factor0: ") << sett.factor0);
                     sett.factor0 = f0;
-                    if (json_data.containsKey("f0"))
+                    if (json_data["f0"].is<int>())
                     {
                         json_data[F("f0")] = f0;
                         updated = true;
@@ -75,7 +81,7 @@ bool update_settings(String &topic, String &payload, Settings &sett, const Slave
                 {
                     LOG_INFO(F("MQTT: CALLBACK: Old Settings.factor1: ") << sett.factor1);
                     sett.factor1 = f1;
-                    if (json_data.containsKey("f1"))
+                    if (json_data["f1"].is<int>())
                     {
                         json_data[F("f1")] = f1;
                         updated = true;
@@ -87,22 +93,22 @@ bool update_settings(String &topic, String &payload, Settings &sett, const Slave
             }
         } else if (param.equals(F("ch0")))
         {
-            float ch0 = payload.toFloat();
-            if (ch0 > 0)
+            float ch0 = payload.toFloat(); // Преобразовали во флоат просто для проверки на условие в следующей строке
+            if (ch0 >= 0)
             {
                 updated = true;
                 LOG_INFO(F("MQTT: CALLBACK: Old Settings.channel0_start: ") << sett.channel0_start);
                 LOG_INFO(F("MQTT: CALLBACK: Old Settings.impulses0_start: ") << sett.impulses0_start);
 
-                sett.channel0_start = ch0;
+                sett.channel0_start = ch0; // В сиде строки сохранили в параметрах (передали превильно без большого кол-ва нулей после запятой)
                 sett.impulses0_start = data.impulses0;
 
                 LOG_INFO(F("MQTT: CALLBACK: New Settings.channel0_start: ") << sett.channel0_start);
                 LOG_INFO(F("MQTT: CALLBACK: New Settings.impulses0_start: ") << sett.impulses0_start);
 
-                if (json_data.containsKey("ch0"))
+                if (json_data["ch0"].is<float>())
                 {
-                    json_data[F("ch0")] = ch0;
+                    json_data[F("ch0")] = (int)(ch0 * 1000 + 5) / 1000.0;  // исправляем округление
                 }
                 sett.setup_time = 0;
                 LOG_INFO(F("MQTT: CALLBACK: reset Settings.setup_time: ") << sett.setup_time);
@@ -110,7 +116,7 @@ bool update_settings(String &topic, String &payload, Settings &sett, const Slave
         } else if (param.equals(F("ch1")))
         {
             float ch1 = payload.toFloat();
-            if (ch1 > 0)
+            if (ch1 >= 0)
             {
                 updated = true;
                 LOG_INFO(F("MQTT: CALLBACK: Old Settings.channel1_start: ") << sett.channel1_start);
@@ -122,11 +128,95 @@ bool update_settings(String &topic, String &payload, Settings &sett, const Slave
                 LOG_INFO(F("MQTT: CALLBACK: New Settings.channel1_start: ") << sett.channel1_start);
                 LOG_INFO(F("MQTT: CALLBACK: New Settings.impulses1_start: ") << sett.impulses1_start);
 
-                if (json_data.containsKey("ch1"))
+                if (json_data["ch1"].is<float>())
                 {
-                    json_data[F("ch1")] = ch1;
+                    json_data[F("ch1")] = (int)(ch1 * 1000 + 5) / 1000.0;
                 }
 
+                sett.setup_time = 0;
+                LOG_INFO(F("MQTT: CALLBACK: reset Settings.setup_time: ") << sett.setup_time);
+            }
+        } else if (param.equals(F("cname0")))
+        {
+            int cname0 = payload.toInt();
+            if (sett.counter0_name != cname0)
+            {
+                LOG_INFO(F("MQTT: CALLBACK: Old Settings.counter0_name: ") << sett.counter0_name);
+                sett.counter0_name = cname0;
+                LOG_INFO(F("MQTT: CALLBACK: New Settings.counter0_name: ") << sett.counter0_name);
+                if (json_data["cname0"].is<int>())
+                {
+                    json_data[F("cname0")] = cname0;
+                    updated = true;
+                }
+                if (json_data["data_type0"].is<int>())
+                {
+                    json_data[F("data_type0")] = (uint8_t)data_type_by_name(cname0);
+                    updated = true;
+                }
+                sett.setup_time = 0;
+                LOG_INFO(F("MQTT: CALLBACK: reset Settings.setup_time: ") << sett.setup_time);
+            }
+        } else if (param.equals(F("cname1")))
+        {
+            int cname1 = payload.toInt();
+            if (sett.counter1_name != cname1)
+            {
+                LOG_INFO(F("MQTT: CALLBACK: Old Settings.counter1_name: ") << sett.counter1_name);
+                sett.counter1_name = cname1;
+                LOG_INFO(F("MQTT: CALLBACK: New Settings.counter1_name: ") << sett.counter1_name);
+                if (json_data["cname1"].is<int>())
+                {
+                    json_data[F("cname1")] = cname1;
+                    updated = true;
+                }
+                if (json_data["data_type1"].is<int>())
+                {
+                    json_data[F("data_type1")] = (uint8_t)data_type_by_name(cname1);
+                    updated = true;
+                }
+                sett.setup_time = 0;
+                LOG_INFO(F("MQTT: CALLBACK: reset Settings.setup_time: ") << sett.setup_time);
+            }
+        } else if (param.equals(F("ctype0")))
+        {
+            int ctype0 = payload.toInt();
+            if (data.counter_type0 != ctype0)
+            {
+                LOG_INFO(F("MQTT: CALLBACK: Old data.counter_type0: ") << data.counter_type0);
+
+                if (masterI2C.setCountersType(ctype0, data.counter_type1))
+                {
+                    updated = true;
+
+                    LOG_INFO(F("MQTT: CALLBACK: New data.counter_type0: ") << ctype0);
+                    if (json_data["ctype0"].is<int>())
+                    {
+                        json_data[F("ctype0")] = ctype0;
+                        
+                    }
+                }
+                sett.setup_time = 0;
+                LOG_INFO(F("MQTT: CALLBACK: reset Settings.setup_time: ") << sett.setup_time);
+            }
+        } else if (param.equals(F("ctype1")))
+        {
+            int ctype1 = payload.toInt();
+            if (data.counter_type1 != ctype1)
+            {
+                LOG_INFO(F("MQTT: CALLBACK: Old data.counter_type1: ") << data.counter_type1);
+
+                if (masterI2C.setCountersType(data.counter_type0, ctype1))
+                {
+                    updated = true;
+
+                    LOG_INFO(F("MQTT: CALLBACK: New data.counter_type1: ") << ctype1);
+                    if (json_data["ctype1"].is<int>())
+                    {
+                        json_data[F("ctype1")] = ctype1;
+                        
+                    }
+                }
                 sett.setup_time = 0;
                 LOG_INFO(F("MQTT: CALLBACK: reset Settings.setup_time: ") << sett.setup_time);
             }
@@ -145,10 +235,11 @@ bool update_settings(String &topic, String &payload, Settings &sett, const Slave
  * @param raw_payload  данные из топика
  * @param length длина сообщения
  */
-void mqtt_callback(Settings &sett, const SlaveData &data, DynamicJsonDocument &json_data, PubSubClient &mqtt_client, String &mqtt_topic, char *raw_topic, byte *raw_payload, unsigned int length)
+void mqtt_callback(Settings &sett, const AttinyData &data, JsonDocument &json_data, PubSubClient &mqtt_client, String &mqtt_topic, char *raw_topic, byte *raw_payload, unsigned int length)
 {
     String topic = raw_topic;
     String payload;
+    String zero_payload("");
     payload.reserve(length);
 
     LOG_INFO(F("MQTT: CALLBACK: Message arrived to: ") << topic);
@@ -164,6 +255,8 @@ void mqtt_callback(Settings &sett, const SlaveData &data, DynamicJsonDocument &j
         // если данные изменились то переопубликуем их сразу не ожидая следующего сеанса связи
         publish_data(mqtt_client, mqtt_topic, json_data, true);
     }
+    LOG_INFO(F("MQTT: Remove retain message: ") << topic);
+    publish(mqtt_client, topic, zero_payload, PUBLISH_MODE_SIMPLE);
 }
 
 /**

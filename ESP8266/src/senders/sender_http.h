@@ -19,10 +19,9 @@
 
 #define HTTP_SEND_ATTEMPTS 3
 
-bool send_http(const Settings &sett, DynamicJsonDocument &jsonData)
+bool send_http(const Settings &sett, JsonDocument &jsonData)
 {
-
-    if (!(sett.waterius_host[0] && sett.waterius_key[0]))
+    if (!(sett.http_on && sett.http_url[0]))
     {
         LOG_INFO(F("HTTP: SKIP"));
         return false;
@@ -35,7 +34,7 @@ bool send_http(const Settings &sett, DynamicJsonDocument &jsonData)
 
     String payload = "";
     serializeJson(jsonData, payload);
-    String url = sett.waterius_host;
+    String url = sett.http_url;
 
     int attempts = HTTP_SEND_ATTEMPTS;
     bool result = false;

@@ -26,6 +26,9 @@ uint8_t crc_8(unsigned char *b, size_t num_bytes, uint8_t crc)
     return crc;
 }
 
+MasterI2C::MasterI2C(): i2c_busy(false)
+{}
+
 void MasterI2C::begin()
 {
     Wire.begin(SDA_PIN, SCL_PIN);
@@ -60,6 +63,14 @@ bool MasterI2C::sendData(uint8_t *buf, size_t size)
     return true;
 }
 
+/**
+ * @brief Чтение одного байта по указателю
+ * 
+ * @param value указатель приемника
+ * @param crc контрольная сумма
+ * @return true прочитано успешно
+ * @return false данные не прочитаны
+ */
 bool MasterI2C::getByte(uint8_t &value, uint8_t &crc)
 {
     if (Wire.requestFrom(I2C_SLAVE_ADDR, 1) != 1)
@@ -99,8 +110,8 @@ bool MasterI2C::getUint(uint32_t &value, uint8_t &crc)
         value |= i2;
         value = value << 8;
         value |= i1;
-        //вот так не работает из-за преобразования типов:
-        // value = i1 | (i2 << 8) | (i3 << 16) | (i4 << 24);
+        // вот так не работает из-за преобразования типов:
+        //  value = i1 | (i2 << 8) | (i3 << 16) | (i4 << 24);
         return true;
     }
     return false;
@@ -108,27 +119,50 @@ bool MasterI2C::getUint(uint32_t &value, uint8_t &crc)
 
 bool MasterI2C::getMode(uint8_t &mode)
 {
-    uint8_t crc = init_crc;
+    BusyGuard guard(i2c_busy);
+
+    uint8_t crc = INIT_ATTINY_CRC;
+
     mode = TRANSMIT_MODE;
     if (!sendCmd('M') || !getByte(mode, crc))
     {
-        LOG_ERROR(F("GetMode failed. Check i2c line."));
+        LOG_ERROR(F("Attiny not found."));
         return false;
     }
     LOG_INFO("mode: " << mode);
     return true;
 }
 
-bool MasterI2C::getSlaveData(SlaveData &data)
+/**
+ * @brief Чтение данных с прибора.
+ * 
+ * Данные читаются в буффер, до контрольной суммы включительно. 
+ * При успешном чтении расчитанная контрольная сумма должна быть равно 0, 
+ * в противном случае во время чтения произошла ошибка.
+ * 
+ * @param data Структура для заполнения данными
+ * @return true прочитанно успешно.
+ * @return false произошла ошибка
+ */
+bool MasterI2C::getAttinyData(AttinyData &data)
 {
-    sendCmd('B');
-    data.diagnostic = WATERIUS_NO_LINK;
+    BusyGuard guard(i2c_busy);
+    uint8_t crc = INIT_ATTINY_CRC;
 
-    uint8_t dummy, crc = init_crc;
+    if (!sendCmd('B'))
+    {
+        LOG_ERROR(F("Send CMD failed"));
+        return false;
+    }
+
+    uint8_t dummy = INIT_ATTINY_CRC;
     bool good = getByte(data.version, crc);
 
-    if (data.version < 29) {
-        init_crc = 0;  // в версиях <29 инициализация идет нулём
+    LOG_INFO(F("attiny firmware ver: ") << data.version);
+
+    if (data.version < 29)
+    {
+        init_crc = 0; // в версиях <29 инициализация идет нулём
         crc = 0;
         crc = crc_8(&data.version, 1, crc);
     }
@@ -153,32 +187,37 @@ bool MasterI2C::getSlaveData(SlaveData &data)
 
     if (good)
     {
-        data.diagnostic = (data.crc == crc) ? WATERIUS_OK : WATERIUS_BAD_CRC;
+        LOG_INFO(F("v") << data.version 
+        << F(" service:") << data.service
+        << F(" reserved4:") << data.reserved4
+        << F(" reserved:") << data.reserved
+        << F(" setups:") << data.setup_started_counter 
+        << F(" resets:") << data.resets 
+        << F(" model:") << data.model
+        << F(" crc:") << data.crc);
+
+        LOG_INFO(F(" ctype0:") << data.counter_type0 
+        << F(" imp0:") << data.impulses0 
+        << F(" adc0:") << data.adc0);
+
+        LOG_INFO(F(" ctype1:") << data.counter_type1 
+        << F(" imp1:") << data.impulses1 
+        << F(" adc1:") << data.adc1);
+
+        if (data.crc != crc)
+        {
+            LOG_ERROR(F("!!! CRC wrong !!!!, go to sleep"));
+        }
+        else
+        {
+            if (data.version >= 30)
+                return true;
+
+            LOG_ERROR(F("ATTINY: unsupported firmware ver.") << data.version);
+        }
     }
-
-    switch (data.diagnostic)
-    {
-    case WATERIUS_BAD_CRC:
-        LOG_ERROR(F("!!! CRC wrong !!!!, go to sleep"));
-    case WATERIUS_OK:
-        LOG_INFO(F("version: ") << data.version);
-        LOG_INFO(F("service: ") << data.service);
-        LOG_INFO(F("setup_started_counter: ") << data.setup_started_counter);
-        LOG_INFO(F("resets: ") << data.resets);
-        LOG_INFO(F("MODEL: ") << data.model);
-        LOG_INFO(F("counter_type0: ") << data.counter_type0);
-        LOG_INFO(F("counter_type1: ") << data.counter_type1);
-        LOG_INFO(F("impulses0: ") << data.impulses0);
-        LOG_INFO(F("impulses1: ") << data.impulses1);
-        LOG_INFO(F("adc0: ") << data.adc0);
-        LOG_INFO(F("adc1: ") << data.adc1);
-        LOG_INFO(F("CRC ok"));
-        break;
-    case WATERIUS_NO_LINK:
-        LOG_ERROR(F("Data failed"));
-    };
-
-    return data.diagnostic == WATERIUS_OK;
+    LOG_ERROR(F("Data failed"));
+    return false;
 }
 
 bool MasterI2C::setWakeUpPeriod(uint16_t period)
@@ -188,7 +227,7 @@ bool MasterI2C::setWakeUpPeriod(uint16_t period)
     txBuf[0] = 'S';
     txBuf[1] = (uint8_t)(period >> 8);
     txBuf[2] = (uint8_t)(period);
-    txBuf[3] = crc_8(&txBuf[1], 2, 0xff);
+    txBuf[3] = crc_8(&txBuf[1], 2, INIT_ATTINY_CRC);
 
     if (!sendData(txBuf, 4))
     {
@@ -198,17 +237,58 @@ bool MasterI2C::setWakeUpPeriod(uint16_t period)
 }
 
 bool MasterI2C::setCountersType(const uint8_t type0, const uint8_t type1)
-{
+{    
+    //sync
     uint8_t txBuf[4];
 
     txBuf[0] = 'C';
     txBuf[1] = type0;
     txBuf[2] = type1;
-    txBuf[3] = crc_8(&txBuf[1], 2, init_crc);
+    txBuf[3] = crc_8(&txBuf[1], 2, INIT_ATTINY_CRC);
 
     if (!sendData(txBuf, 4))
     {
         return false;
     }
     return true;
+}
+
+bool MasterI2C::setReferenceVoltage(uint16_t voltage)
+{   
+    /**
+     * Калибровать напряжение внутреннего регулярна текущим.
+     * Если voltage = 0, то attiny читает напряжение.
+     */
+    BusyGuard guard(i2c_busy);
+    
+    uint8_t txBuf[4];
+
+    txBuf[0] = 'V';
+    txBuf[1] = (uint8_t)(voltage >> 8);
+    txBuf[2] = (uint8_t)(voltage);
+    txBuf[3] = crc_8(&txBuf[1], 2, INIT_ATTINY_CRC);
+ 
+     if (!sendData(txBuf, 4))
+     {
+         return false;
+     }
+     return true;
+}
+
+
+bool MasterI2C::updateVoltage()
+{
+    return setReferenceVoltage(0);
+}
+
+bool MasterI2C::setTransmitMode()
+{
+    BusyGuard guard(i2c_busy);
+    return sendCmd('T');
+}
+    
+bool MasterI2C::setSleep()
+{
+    BusyGuard guard(i2c_busy);
+    return sendCmd('Z');
 }
