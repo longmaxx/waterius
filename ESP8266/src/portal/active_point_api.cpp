@@ -427,7 +427,7 @@ void save_ip_param(const AsyncWebParameter *p, uint32_t &v, JsonObject &errorsOb
     }
 }
 
-void save_param_hc_pulsar_address(AsyncWebParameter *p, char *settHCAddress, size_t size, JsonObject &errorsObj)
+void save_param_hc_pulsar_address(const AsyncWebParameter *p, char *settHCAddress, size_t size, JsonObject &errorsObj)
 {
     if (p->value().length() > size*2)
     {

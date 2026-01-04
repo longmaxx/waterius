@@ -626,6 +626,6 @@ struct Settings
     */
     uint8_t reserved9[76] = {0};
 
-}; // 960 байт
+}; // 968 байт
 
 #endif

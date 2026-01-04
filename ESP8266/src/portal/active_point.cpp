@@ -112,8 +112,8 @@ String parse_sett_hc_pulsar_serial(char *sett, size_t size)
     for (uint8_t i = 0 ; i<size; i++)
     {
          char a = sett[i];
-         char highChar = a>>4;
-         char lowChar  = a&0b00001111;
+         unsigned char highChar = a>>4;
+         unsigned char lowChar  = a&0b00001111;
          if ( (highChar>= 0) && (highChar <= 9) && (lowChar>=0) && (lowChar <= 9))
          {
             param_heatcounter_serial_curval[i_param_heatcounter_serial_curval++] =  iChars[highChar];        

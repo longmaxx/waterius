@@ -40,7 +40,7 @@ void setup()
     LOG_INFO(F("Waterius\n========\n"));
     LOG_INFO(F("Build: ") << __DATE__ << F(" ") << __TIME__);
 
-    static_assert((sizeof(Settings) == 960), "sizeof Settings != 960");
+    static_assert((sizeof(Settings) == 968), "sizeof Settings != 968");
     #ifndef HEAT_PULSAR_DISABLED
         // Настраиваем работу со счетчиком тепла
         pinMode(HEAT_DCDC_EN_PIN, OUTPUT);
